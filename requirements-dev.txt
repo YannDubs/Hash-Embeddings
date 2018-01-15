@@ -1,0 +1,5 @@
+numpy
+nltk
+sklearn
+scipy
+jupyter

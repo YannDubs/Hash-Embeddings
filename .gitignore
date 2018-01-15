@@ -1,0 +1,22 @@
+# placeholders to keep directories
+!.keep
+
+# folders to remove
+venv*/
+data/
+old*
+
+# Byte-compiled / optimized / DLL files
+*.egg-info
+*pyc
+__pycache__/
+*.py[cod]
+*.egg*
+.ipynb_checkpoints/
+.DS_Store
+
+# placeholders to keep directories
+!**/.keep
+!**/.gitignore
+!.gitignore
+!.keep
