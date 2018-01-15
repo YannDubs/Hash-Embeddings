@@ -62,7 +62,7 @@ class HashEmbedding(nn.Module):
         self.num_embeddings = num_embeddings
         self.embedding_dim = embedding_dim
         self.num_hashes = num_hashes
-        defaultNBuckets = (num_embeddings * self.num_hashes)//(10 * self.embedding_dim)
+        defaultNBuckets = (num_embeddings * self.num_hashes)//(self.embedding_dim)
         self.num_buckets = num_buckets - 1 if num_buckets is not None else defaultNBuckets
         self.train_sharedEmbed = train_sharedEmbed
         self.train_weight = train_weight
