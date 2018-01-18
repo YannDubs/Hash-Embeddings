@@ -46,12 +46,10 @@ class EarlyStopping:
         if self.verbose > 0:
             print("Stoping at epoch:{} with patience:{}. Best:{}.".format(self.epoch,self.patience,self.best))
 
-def evaluate_accuracy(dataIter,model,isCuda=torch.cuda.is_available()):
+def evaluate_accuracy(dataIter,model):
     """Given a iterator over a `dataset` and a `model`, returns the accuracy."""
     total, correct = 0,0
     for x,y in dataIter:
-        if isCuda:
-            x = x.cuda()
         x = Variable(x)
         y = y.squeeze()
         outputs = model(x)
@@ -157,7 +155,7 @@ class Trainer:
         for epoch in range(epochs):
             for x,y in train:
                 if self.isCuda:
-                    x, y= x.cuda(), y.cuda()
+                    y = y.cuda()
                 x = Variable(x)
                 y = Variable(y).squeeze()
 
@@ -166,9 +164,8 @@ class Trainer:
                 loss = self.criterion(outputs,y)
                 loss.backward()
                 self.optimizer.step()
-
             
-            metric = self.eval_metric(valid,self.model,isCuda=self.isCuda)
+            metric = self.eval_metric(valid,self.model)
             if self.verbose > 0 and epoch % (4-self.verbose) == 0:
                 print("Epoch: {}. Loss: {}. Acc: {}.".format(epoch,loss.data[0],metric))
                     
@@ -177,6 +174,6 @@ class Trainer:
                     callback.on_train_end()
                     return
         
-        def evaluate(self,test):
-            """Evaluates the model on a itraitable `test` dataset."""
-            print("Test accurate:",self.eval_metric(test,self.model))
+    def evaluate(self,test):
+        """Evaluates the model on a itraitable `test` dataset."""
+        print("Test accurate:",self.eval_metric(test,self.model))

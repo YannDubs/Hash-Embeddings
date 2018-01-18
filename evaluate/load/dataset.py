@@ -3,7 +3,6 @@ from builtins import open,str,range
 
 import os,csv
 import numpy as np
-from sklearn.feature_extraction.text import CountVectorizer, HashingVectorizer
 import torch
 from torch.utils.data import Dataset
 
@@ -15,23 +14,26 @@ class CrepeDataset(Dataset):
         
         Args:
             path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
                 random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
                 This can be seen as dropout. Only when training.
-            maxFeatures (int,optional): Maximum number of features. I.e (max) number of rows in dictionnary or hash.
-                Default: 2**20.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
                  path,
                  train=True,
                  isHashingTrick=True,
                  nFeaturesRange=None,
-                 maxFeatures=None,
+                 trainVocab=None,
                  seed=1234,
                  **kwargs):
         assert (nFeaturesRange is None or (len(nFeaturesRange) == 2 and nFeaturesRange[1] > nFeaturesRange[0] >= 0), 
@@ -40,7 +42,19 @@ class CrepeDataset(Dataset):
         np.random.seed(seed)
         self.train = train
         self.path = os.path.join(path, "train.csv" if self.train else "test.csv")
-        self.vectorizer = HashingVectorizer(n_features=maxFeatures,norm=None,**kwargs) if isHashingTrick else CountVectorizer(max_features=maxFeatures,**kwargs)
+        if isHashingTrick:
+            self.fit = lambda x: None
+            self.to_ids = lambda txt: hashing_trick(txt,**kwargs) 
+        else:
+            if self.train:
+                self.vocab = Vocabulary(**kwargs)
+                self.fit = self.vocab.fit
+            else:
+                assert trainVocab is not None, "When both train and HashingTrick are flase you have to give a vocabulary. Ex : train.vocab"
+                self.vocab = trainVocab
+                self.fit = lambda x: None
+            self.to_ids = self.vocab.tokenize
+            #self.vectorizer = HashingVectorizer(n_features=maxFeatures,norm=None,**kwargs) if isHashingTrick else CountVectorizer(max_features=maxFeatures,**kwargs)
         self.nFeaturesRange = nFeaturesRange
         self.maxLength = None
         self.labels = None
@@ -66,6 +80,18 @@ class CrepeDataset(Dataset):
 
     def load(self):
         with open(self.path, 'r', encoding="utf-8") as f:
+            self.fit(f)
+            f.seek(0)
+            reader = csv.reader(f, delimiter=',', quotechar='"')
+            self.labels = torch.LongTensor([int(row[0]) - 1 for row in reader])
+            f.seek(0)
+            self.data = [np.array(list(self.to_ids(' '.join(row[1:])))) for row in reader]
+         
+        self.maxLength = len(max(self.data,key=len))
+
+    """
+    def load(self):
+        with open(self.path, 'r', encoding="utf-8") as f:
             sparseCounts = self.vectorizer.fit_transform(f)
             f.seek(0)
             reader = csv.reader(f, delimiter=',', quotechar='"')
@@ -75,14 +101,10 @@ class CrepeDataset(Dataset):
         # converts to repetition of indices
         self.data = [np.repeat(row.indices,np.abs(row.data).astype(int)) for row in sparseCounts]
         self.maxLength = len(max(self.data,key=len))
-        
+    """
 
 class AgNews(CrepeDataset):
-    def __init__(self,
-                 classes={'World': 0, 'Sports': 1, 'Business': 2, 'Sci/Tech': 3},
-                 path="../data/ag_news_csv",
-                 **kwargs):
-        r"""`AG's News <http://www.di.unipi.it/~gulli/AG_corpus_of_news_articles.html>` dataset.
+    r"""`AG's News <http://www.di.unipi.it/~gulli/AG_corpus_of_news_articles.html>` dataset.
 
         The AG's news topic classification dataset is constructed by choosing 4 largest classes from the original corpus. 
         Each class contains 30,000 training samples and 1,900 testing samples. The total number of training samples is 120,000 and testing 7,600.
@@ -100,6 +122,10 @@ class AgNews(CrepeDataset):
             **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
                 Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
         """
+    def __init__(self,
+                 classes={'World': 0, 'Sports': 1, 'Business': 2, 'Sci/Tech': 3},
+                 path="../data/ag_news_csv",
+                 **kwargs):
         super(AgNews,self).__init__(path,**kwargs)
         self.classes = classes
 

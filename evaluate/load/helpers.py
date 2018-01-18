@@ -5,6 +5,7 @@ import sys
 import string
 import hashlib
 from collections import Counter
+from itertools import chain
 
 import numpy as np
 import torch
@@ -12,10 +13,38 @@ from torch.utils.data.sampler import SubsetRandomSampler
 from torch.utils.data import DataLoader
 
 
+def n_grams(tokens, n=1):
+    r"""Returns an itirator over the `n`-grams given a `listTokens`.
+
+    Args:
+        tokens (list): List of tokens.
+        n (int,optional): N in n-grams.
+
+    Returns:
+        Iterator over the n-grams.
+    """
+    shiftToken = lambda i: (el for j,el in enumerate(tokens) if j>=i)
+    shiftedTokens = (shiftToken(i) for i in range(n))
+    tupleNGrams = zip(*shiftedTokens)
+    return (" ".join(i) for i in tupleNGrams)
+
+def range_ngrams(tokens, ngramRange=(1,2)):
+    r"""Returns an itirator over all `n`-grams for n in range(`ngramRange`) given a `listTokens`.
+
+    Args:
+        tokens (list): List of tokens.
+        ngramRange (tuple,optional): Range of n (n_min,n_max) exclusive n_max .
+
+    Returns:a
+        Iterator over the n-grams.
+    """
+    return chain(*(n_grams(tokens, i) for i in range(*ngramRange)))
+
 # Stoped using because already done in sklearn. Note that this is quicker than in sklearn (~2x) but only works for uni grams yet.
 def text_to_word_sequence(txt,
                           filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
                           lower=True, 
+                          rmSingleChar=True,
                           split=" ",
                           maxLength=None):
     """Converts a text to a sequence of words (or tokens).
@@ -24,6 +53,7 @@ def text_to_word_sequence(txt,
         txt (str): Input text (string).
         filters (str,optional): Sequence of characters to filter out.
         lower (bool,optional): Whether to convert the input to lowercase.
+        rmSingleChar (bool,optional): Whether to remove words with a single letter.
         split (bool,optional): Sentence split marker (string).
         maxLength (int,optional): max length of a text. Drops the rest.
 
@@ -43,6 +73,8 @@ def text_to_word_sequence(txt,
     txt = txt.translate(translate_map)
     
     for i,el in enumerate(txt.split(split)):
+        if rmSingleChar and len(el) == 1:
+            continue
         if i >= maxLen:
             break
         if el:
@@ -51,13 +83,15 @@ def text_to_word_sequence(txt,
 
 # Stoped using because already done in sklearn. Note that this is quicker than in sklearn (~2x) but only works for uni grams yet.
 def hashing_trick(txt, 
-                  n,
+                  n=None,
                   hash_function=None,
                   filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
                   lower=True,
+                  rmSingleChar=True,
                   split=' ',
                   maxLength=None,
-                  mask_zero=True):
+                  mask_zero=True,
+                  ngramRange=(1,2)):
     """Converts a text to a sequence of indexes in a fixed-size hashing space.
 
     Args:
@@ -68,9 +102,11 @@ def hashing_trick(txt,
             returns a int. Note that `hash` is not a stable contray to the others. 
         filters (string,optional): Sequence of characters to filter out.
         lower (bool, optional: Whether to convert the input to lowercase.
+        rmSingleChar (bool,optional): Whether to remove words with a single letter.
         split (string, optional): Sentence split marker (string).
         maxLength (int,optional): max length of a text. Drops the rest.
         mask_zero (bool, optional): whether the 0 input shouldn't be assigned to any word.
+        ngramRange (tuple,optional): Range of n : (n_min,n_max) exclusive n_max .
 
     Returns:
         A list of integer word indices (unicity non-guaranteed).
@@ -86,14 +122,17 @@ def hashing_trick(txt,
                                 filters=filters,
                                 lower=lower,
                                 split=split,
-                                maxLength=maxLength)
+                                maxLength=maxLength,
+                                rmSingleChar=rmSingleChar)
 
+    nGrams = range_ngrams(list(seq),ngramRange=ngramRange)
+
+    if not n:
+        return (hash_function(token) for token in nGrams)
     if mask_zero:
-        for w in seq:
-            yield hash_function(w) % (n - 1) + 1
+        return (hash_function(token) % (n - 1) + 1 for token in nGrams)
     else:
-        for w in seq:
-            yield hash_function(w) % n
+        return (hash_function(token) % n for token in nGrams)
 
 
 # Stoped using because already done in sklearn. Note that this is much than in sklearn (~2x) but only works for uni grams yet.
@@ -104,16 +143,21 @@ class Vocabulary:
         num_words (int,optional): Maximum number of tokens to encode (will keep the most common n).
         filters (str,optional): Sequence of characters to filter out.
         lower (bool, optional: Whether to convert the input to lowercase.
+        rmSingleChar (bool,optional): Whether to remove words with a single letter.
         split (string, optional): Sentence split marker (string).
         maxLength (int,optional): max length of a text. Drops the rest.
         mask_zero (bool, optional): whether the 0 input shouldn't be assigned to any word.
+        ngramRange (tuple,optional): Range of n : (n_min,n_max) exclusive n_max .
     """
     def __init__(self, 
                  num_words=None,
                  filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
                  lower=True,
+                 rmSingleChar=True,
                  split=' ',
-                 maxLength=None):
+                 maxLength=None,
+                 mask_zero=True,
+                 ngramRange=(1,2)):
         self.word_counts = Counter()
         self.word_index = {}
         self.filters = filters
@@ -122,7 +166,14 @@ class Vocabulary:
         self.maxLen = maxLength
         self.num_words = num_words
         self.is_finish_fitting = False
-        self.text_to_word_sequence = lambda txt: text_to_word_sequence(txt,filters=self.filters,lower=self.lower,split=self.split,maxLength=self.maxLen)
+        self.text_to_word_sequence = lambda txt: text_to_word_sequence(txt,
+                                                                        filters=filters,
+                                                                        lower=lower,
+                                                                        split=split,
+                                                                        maxLength=maxLength,
+                                                                        rmSingleChar=rmSingleChar)
+        self.mask_zero = mask_zero
+        self.ngramRange = ngramRange
 
     def __getitem__(self, word):
         """Gets the ID associated with the given token."""
@@ -130,25 +181,29 @@ class Vocabulary:
 
     def fit_tokenize(self,txt):
         """FIts the dictionnary and replaces the tokens by ID all at once. Cannot keep only the most n common words."""
-        assert self.num_words is None, "You can only fit_tokenize if you sum_words=None but num_words={}. Please use online_fit and tokenize separately.".format(self.num_words)
+        assert self.num_words is None, "You can only fit_tokenize if you sum_words=None but num_words={}. Please use fit and tokenize separately.".format(self.num_words)
         
         seq = self.text_to_word_sequence(txt)
-        for w in seq:
-            if w not in self.word_index:
-                self.word_index[w] = len(self.word_index) + 1 # never assign zero
-            yield self.word_index[w]
+        nGrams = range_ngrams(list(seq),ngramRange=self.ngramRange)
 
-    def online_fit(self,txt):
+        for token in nGrams:
+            if token not in self.word_index:
+                self.word_index[token] = len(self.word_index) + int(self.mask_zero) # never assign zero
+            yield self.word_index[token]
+
+    def fit(self,txt):
         """Fits the dictionnary in the first pass. Can call multiple times untile you call `finish_fitting`."""
         assert not self.is_finish_fitting, "You canot refit after finishing fitting"
         seq = self.text_to_word_sequence(txt)
-        self.word_counts.update(seq)
+        nGrams = range_ngrams(list(seq),ngramRange=self.ngramRange)
+        self.word_counts.update(nGrams)
 
     def finish_fitting(self):
-        """Keeps only the `n` most common words for memory reasons. Once called, you can no longer call `online_fit`."""
+        """Keeps only the `n` most common words for memory reasons. Once called, you can no longer call `fit`."""
         assert not self.is_finish_fitting, "You can only call finish_fitting once"
         
-        self.word_index = {w[0]:i+1 for i,w in enumerate(self.word_counts.most_common(self.num_words))}
+        inc = int(self.mask_zero) # never assign zero
+        self.word_index = {w[0]:i+inc for i,w in enumerate(self.word_counts.most_common(self.num_words))}
 
         self.word_counts = None # free some space
         self.is_finish_fitting = True
@@ -159,9 +214,9 @@ class Vocabulary:
             self.finish_fitting()
 
         seq = self.text_to_word_sequence(txt)
-        for w in seq:
-            if w in self.word_index:
-                yield self.word_index[w]
+        nGrams = range_ngrams(list(seq),ngramRange=self.ngramRange)
+
+        return (self.word_index[token] for token in nGrams if token in self.word_index)
 
 def train_valid_load(dataset,validSize=0.1,isShuffle=True,seed=123,**kwargs):
     r"""Utility to split a training set into a validation and a training one.

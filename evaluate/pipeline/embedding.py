@@ -110,7 +110,7 @@ class HashEmbedding(nn.Module):
         
         self.importance_weights = nn.Embedding(self.num_embeddings,
                                               self.num_hashes)
-        self.shared_embeddings = nn.Embedding(self.num_buckets + 1,
+        self = nn.Embedding(self.num_buckets + 1,
                                             self.embedding_dim,
                                             padding_idx=self.padding_idx)
         self.hashes = None
@@ -143,6 +143,19 @@ class HashEmbedding(nn.Module):
             data[iRow,:] = value
             return torch.nn.Parameter(data,requires_grad=parameters.requires_grad)
 
+        def next_prime(n):
+            """Naively returns the next prime."""
+            def is_prime(x):
+                for i in range(2,int(np.sqrt(x))):
+                    if x % i == 0:
+                        return False
+                return True
+                    
+            while not is_prime(n):
+                n += 1
+            
+            return n
+
         np.random.seed(self.seed)
         if self.seed is not None:
             torch.manual_seed(self.seed)
@@ -157,6 +170,7 @@ class HashEmbedding(nn.Module):
 
         self.shared_embeddings.weight.requires_grad = self.train_sharedEmbed
         self.importance_weights.weight.requires_grad = self.train_weight
+
 
         self.hashes = torch.from_numpy((np.random.randint(0, 2 ** 30,
                                                           size=(self.num_embeddings, self.num_hashes)
@@ -186,7 +200,7 @@ class HashEmbedding(nn.Module):
     def forward(self, input):  
         idx_hashes = self._idx_hash(input,self.num_embeddings,mask_zero=self.padding_idx is not None)
         idx_importance_weights = self._idx_hash(input,self.num_embeddings,mask_zero=False)
-        idx_shared_embeddings = self.hashes[idx_hashes.data,:]
+        idx_shared_embeddings = self.hashes[idx_hashes.data.cpu(),:]
         
         shared_embedding = torch.stack([self.shared_embeddings(idx_shared_embeddings[:,:,iHash]) 
                                         for iHash in range(self.num_hashes)], dim=-1)
