@@ -71,13 +71,10 @@ class Trainer:
         isCuda (bool,optional): Whether to use GPU.
 
     Example:
-        >>> earlyStopping = EarlyStopping(patience=10)
-        >>> for epoch in range(50):
-        >>>     ... # train 
-        >>>     accuracy = ...
-        >>>     if earlyStopping(accuracy):
-        >>>         earlyStopping.on_train_end()
-        >>>         break
+        >>> trainer = Trainer(model)
+        >>> callbacks = [EarlyStopping(patience=10)]
+        >>> trainer(train,callbacks=callbacks,validSize=0.1)
+        >>> trainer.evaluate(test)
     """
     def __init__(self,
                  model,

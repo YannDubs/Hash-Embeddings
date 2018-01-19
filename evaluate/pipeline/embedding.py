@@ -3,6 +3,73 @@ import torch
 import torch.nn as nn
 from torch.nn.init import normal
 
+class HashFamily():
+    r"""Universal hash family as proposed by Carter and Wegman.
+    
+    .. math::
+
+            \begin{array}{ll}
+            h_{{a,b}}(x)=((ax+b)~{\bmod  ~}p)~{\bmod  ~}m \ \mid p > m\\
+            \end{array}
+    
+    Args:
+        bins (int): Number of bins to hash to. Better if a prime number.
+        mask_zero (bool, optional): Whether the 0 input is a special "padding" value to mask out.
+        moduler (int,optional): Temporary hashing. Has to be a prime number.
+    """
+    def __init__(self,bins,mask_zero=False,moduler=None):
+        if moduler and moduler <= bins:
+            raise ValueError("p (moduler) should be >> m (buckets)")
+            
+        self.bins = bins 
+        self.moduler = moduler if moduler else self._next_prime(np.random.randint(self.bins+1,2**32))
+        self.mask_zero = mask_zero
+        
+        # do not allow same a and b, as it could mean shifted hashes
+        self.sampled_a = set()
+        self.sampled_b = set()
+    
+    def _is_prime(self,x):
+        """Naive is prime test."""
+        for i in range(2,int(np.sqrt(x))):
+            if x % i == 0:
+                return False
+        return True
+        
+    def _next_prime(self,n):  
+        """Naively gets the next prime larger than n."""
+        while not self._is_prime(n):
+            n += 1
+
+        return n
+    
+    def draw_hash(self,a=None,b=None):
+        """Draws a single hash function from the family."""
+        if a is None:
+            while a is None or a in self.sampled_a:
+                a = np.random.randint(1, self.moduler-1)
+                assert len(self.sampled_a) < self.moduler-2, "please give a bigger moduler"
+                
+            self.sampled_a.add(a)
+        if b is None:
+            while b is None or b in self.sampled_b:
+                b = np.random.randint(0, self.moduler-1)
+                assert len(self.sampled_b) < self.moduler-1, "please give a bigger moduler"
+                
+            self.sampled_b.add(b)
+        
+        if self.mask_zero:
+            # The return doesn't set 0 to 0 because that's taken into account in the hash embedding
+            # if want to use for an integer then should uncomment second line !!!!!!!!!!!!!!!!!!!!!
+            return lambda x: ((a*x + b) % self.moduler) % (self.bins-1) + 1
+            #return lambda x: 0 if x == 0 else ((a*x + b) % self.moduler) % (self.bins-1) + 1
+        else:
+            return lambda x: ((a*x + b) % self.moduler) % self.bins 
+    
+    def draw_hashes(self,n,**kwargs):
+        """Draws n hash function from the family."""
+        return [self.draw_hash() for i in range(n)]
+
 class HashEmbedding(nn.Module):
     r"""Type of embedding which uses multiple hashes to approximate an Embedding layer with more parameters.
 
@@ -110,10 +177,12 @@ class HashEmbedding(nn.Module):
         
         self.importance_weights = nn.Embedding(self.num_embeddings,
                                               self.num_hashes)
-        self = nn.Embedding(self.num_buckets + 1,
+        self.shared_embeddings = nn.Embedding(self.num_buckets + 1,
                                             self.embedding_dim,
                                             padding_idx=self.padding_idx)
-        self.hashes = None
+
+        hashFamily = HashFamily(self.num_buckets,mask_zero=mask_zero)
+        self.hashes = hashFamily.draw_hashes(self.num_hashes)
         
         if aggregation_mode == 'sum':
             self.aggregate = lambda x: torch.sum(x, dim=-1)
@@ -143,19 +212,6 @@ class HashEmbedding(nn.Module):
             data[iRow,:] = value
             return torch.nn.Parameter(data,requires_grad=parameters.requires_grad)
 
-        def next_prime(n):
-            """Naively returns the next prime."""
-            def is_prime(x):
-                for i in range(2,int(np.sqrt(x))):
-                    if x % i == 0:
-                        return False
-                return True
-                    
-            while not is_prime(n):
-                n += 1
-            
-            return n
-
         np.random.seed(self.seed)
         if self.seed is not None:
             torch.manual_seed(self.seed)
@@ -171,36 +227,9 @@ class HashEmbedding(nn.Module):
         self.shared_embeddings.weight.requires_grad = self.train_sharedEmbed
         self.importance_weights.weight.requires_grad = self.train_weight
 
-
-        self.hashes = torch.from_numpy((np.random.randint(0, 2 ** 30,
-                                                          size=(self.num_embeddings, self.num_hashes)
-                                                         ) % self.num_buckets) + 1 
-                                      ).type(torch.LongTensor)
-        
-    def _idx_hash(self, inputs, maxOutput, mask_zero=True):
-        r"""Hash function for integers used to map indices of different sizes.
-        
-        Args:
-            inputs (torch.Tensor): indices to hash.
-            maxOutput (int): maximum integer to output. I.e size of table to access.
-            mask_zero (bool,optional): whether should only map zero input to zero.
-            
-        To Do:
-            Should enable :math:`\hat{D} \neq D_1`.
-        """  
-        if mask_zero:
-            idx_zero = inputs == 0
-            # shouldn't map non zero vectors to 0
-            inputs = inputs%(maxOutput-1) + 1
-            inputs[idx_zero] = 0
-            return inputs
-        else:
-            return inputs%maxOutput
-            
     def forward(self, input):  
-        idx_hashes = self._idx_hash(input,self.num_embeddings,mask_zero=self.padding_idx is not None)
-        idx_importance_weights = self._idx_hash(input,self.num_embeddings,mask_zero=False)
-        idx_shared_embeddings = self.hashes[idx_hashes.data.cpu(),:]
+        idx_importance_weights = input % self.num_embeddings
+        idx_shared_embeddings = torch.stack([h(input).masked_fill_(input==0,0) for h in self.hashes], dim=-1)
         
         shared_embedding = torch.stack([self.shared_embeddings(idx_shared_embeddings[:,:,iHash]) 
                                         for iHash in range(self.num_hashes)], dim=-1)
