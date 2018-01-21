@@ -1,10 +1,15 @@
+import os,sys
+
+parentddir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+sys.path.append(parentddir)
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.nn.init import xavier_uniform, normal, constant
 
-from evaluate.pipeline.embedding import HashEmbedding
+from hashembed import HashEmbedding
 
 def text_embedding(x):
     """Makes a phrase embedding out of all the word embeddings which constitutes it."""
@@ -68,6 +73,12 @@ class ModelNoDict(nn.Module):
         self.fc1.biais= init_fc_b(self.fc1.weight)
         
     def forward(self,x):
+        # temporary
+        if not self.isHash:
+            if self.paddingIdx == 0:
+                x = (x % self.embedding.weight.shape[0]-1) +1
+            else:
+                x = (x % self.embedding.weight.shape[0])
         x = self.embedding(x)
         x = self.text_embedding(x) 
         x = self.fc1(x)

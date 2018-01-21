@@ -10,47 +10,48 @@ from evaluate.load.helpers import hashing_trick, Vocabulary
 
 class CrepeDataset(Dataset):
     r"""Class for making general datasets of Xiang Zhang's Crepe format `https://github.com/zhangxiangxiao/Crepe`. 
-        Dataset `AG's News <http://www.di.unipi.it/~gulli/AG_corpus_of_news_articles.html>` dataset.
         
         Args:
             path (string): Root directory of dataset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
             train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
                 If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
             trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
             **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
-                Default `hashing_trick`: n=None, hash_function=None, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
                                          rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
-                Default `Vocabulary`: n=None, hash_function=None, filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
                                       rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
                  path,
+                 file=None,
                  train=True,
                  isHashingTrick=True,
                  nFeaturesRange=None,
                  trainVocab=None,
                  seed=1234,
                  **kwargs):
-        assert (nFeaturesRange is None or (len(nFeaturesRange) == 2 and nFeaturesRange[1] > nFeaturesRange[0] >= 0), 
+        assert (nFeaturesRange is None or (len(nFeaturesRange) == 2 and nFeaturesRange[1] > nFeaturesRange[0] >= 1), 
                 "nFeaturesRange has to be a tuple: (minFeatures,maxFeatures) not {}".format(nFeaturesRange))
 
         np.random.seed(seed)
         self.train = train
-        self.path = os.path.join(path, "train.csv" if self.train else "test.csv")
-        if isHashingTrick:
-            self.fit = lambda x: None
+        self.path = os.path.join(path, file if file is not None else "train.csv" if self.train else "test.csv")
+        self.isHashingTrick = isHashingTrick
+        if self.isHashingTrick:
             self.to_ids = lambda txt: hashing_trick(txt,**kwargs) 
         else:
             if self.train:
                 self.vocab = Vocabulary(**kwargs)
                 self.fit = self.vocab.fit
             else:
-                assert trainVocab is not None, "When both train and HashingTrick are flase you have to give a vocabulary. Ex : train.vocab"
+                assert trainVocab is not None, "When both train and HashingTrick are false you have to give a vocabulary. Ex : train.vocab"
                 self.vocab = trainVocab
                 self.fit = lambda x: None
             self.to_ids = self.vocab.tokenize
@@ -70,7 +71,7 @@ class CrepeDataset(Dataset):
         nFeatures = len(features)
         if self.train and self.nFeaturesRange is not None and features.size != 0:
             low, high = self.nFeaturesRange
-            nFeatures = np.random.randint(min(low,nFeatures), min(high,nFeatures)+1)
+            nFeatures = np.random.randint(min(low,nFeatures), min(high,nFeatures+1))
             features = np.random.choice(features,size=nFeatures,replace=False)
         if nFeatures != 0:
             x[:nFeatures] = torch.LongTensor(features)
@@ -80,11 +81,16 @@ class CrepeDataset(Dataset):
 
     def load(self):
         with open(self.path, 'r', encoding="utf-8") as f:
-            self.fit(f)
-            f.seek(0)
             reader = csv.reader(f, delimiter=',', quotechar='"')
+
+            if not self.isHashingTrick:
+                for row in reader:
+                    self.fit(' '.join(row[1:]))
+                f.seek(0)
+
             self.labels = torch.LongTensor([int(row[0]) - 1 for row in reader])
             f.seek(0)
+
             self.data = [np.array(list(self.to_ids(' '.join(row[1:])))) for row in reader]
          
         self.maxLength = len(max(self.data,key=len))
@@ -112,21 +118,29 @@ class AgNews(CrepeDataset):
         
         Args:
             classes (dict,optional): map class label to label in the data.
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
                  classes={'World': 0, 'Sports': 1, 'Business': 2, 'Sci/Tech': 3},
-                 path="../data/ag_news_csv",
+                 id="ag",
                  **kwargs):
-        super(AgNews,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(AgNews,self).__init__(self.rootPath,**kwargs)
         self.classes = classes
 
 class AmazonReviewPolarity(CrepeDataset):
@@ -137,20 +151,28 @@ class AmazonReviewPolarity(CrepeDataset):
          Each class has 1,800,000 training samples and 200,000 testing samples.
         
         Args:
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
-                 path="../data/amazon_review_polarity_csv",
+                 id="amazon",
                  **kwargs):
-        super(AmazonReviewPolarity,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(AmazonReviewPolarity,self).__init__(self.rootPath,**kwargs)
 
 class DbPedia(CrepeDataset):
     r"""`DBPedia Ontology Classification Dataset` dataset.
@@ -163,22 +185,30 @@ class DbPedia(CrepeDataset):
         
         Args:
             classes (dict,optional): map class label to label in the data.
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
                  classes = {'Company': 0, 'EducationalInstitution': 1, 'Artist': 2, 'Athlete': 3, 'OfficeHolder': 4, 'MeanOfTransportation': 5, 
                             'Building': 6, 'NaturalPlace': 7, 'Village': 8, 'Animal': 9, 'Plant': 10, 'Album': 11, 'Film': 12, 'WrittenWork': 13},
-                 path="../data/dbpedia_csv",
+                 id="dbpedia",
                  **kwargs):
-        super(DbPedia,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(DbPedia,self).__init__(self.rootPath,**kwargs)
         self.classes = classes
 
 class SogouNews(CrepeDataset):
@@ -192,21 +222,29 @@ class SogouNews(CrepeDataset):
 
         Args:
             classes (dict,optional): map class label to label in the data.
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
                  classes = {'sports': 0, 'finance': 1, 'entertainment': 2, 'automobile': 3, 'technology': 4},
-                 path="../data/sougou_news_csv",
+                 id="sogou",
                  **kwargs):
-        super(SogouNews,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(SogouNews,self).__init__(self.rootPath,**kwargs)
         self.classes = classes
 
 class YahooAnswers(CrepeDataset):
@@ -222,23 +260,31 @@ class YahooAnswers(CrepeDataset):
 
         Args:
             classes (dict,optional): map class label to label in the data.
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
                  classes = {'Society & Culture': 0, 'Science & Mathematics': 1, 'Health': 2, 'Education & Reference': 3, 
                             'Computers & Internet': 4, 'Sports': 5, 'Business & Finance': 6, 'Entertainment & Music': 7, 
                             'Family & Relationships': 8, 'Politics & Government': 9},
-                 path="../data/yahoo_answers_csv",
+                 id="yahoo",
                  **kwargs):
-        super(YahooAnswers,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(YahooAnswers,self).__init__(self.rootPath,**kwargs)
         self.classes = classes
 
 class YelpReview(CrepeDataset):
@@ -248,20 +294,28 @@ class YelpReview(CrepeDataset):
          review star from 1 to 5. In total there are 650,000 trainig samples and 50,000 testing samples.
 
         Args:
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
-                 path="../data/yelp_review_full_csv",
+                 id="yelp",
                  **kwargs):
-        super(YelpReview,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(YelpReview,self).__init__(self.rootPath,**kwargs)
 
 class YelpReviewPolarity(CrepeDataset):
     r"""`Yelp Review Full Star Dataset` dataset.
@@ -271,17 +325,67 @@ class YelpReviewPolarity(CrepeDataset):
         testing samples. Negative polarity is class 1, and positive class 2.
 
         Args:
-            path (string): Root directory of dataset.
-            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``.
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
             isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
             nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
-                random number of features K extracted. WHere k in range [minFeatures,maxFeatures]. 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
                 This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
             seed (int, optional): sets the seed for generating random numbers.
-            **kwargs: Additional arguments to the sklearn vectorizer : `HashingVectorizer` or `CountVectorizer`. 
-                Default: lowercase=True / max_features=2**20 / ngram_range=(1,1) / remove punctuation and single characters.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
-                 path="../data/yelp_review_polarity_csv",
+                 id="yelp-polarity",
                  **kwargs):
-        super(YelpReview,self).__init__(path,**kwargs)
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(YelpReview,self).__init__(self.rootPath,**kwargs)
+
+def get_dataset(identifier):
+    r"""Returns the correct CrepeDataset based on Id in `{ag,amazon,dbpedia,sogou,yahoo,yelp,yelp-polarity}`"""
+    if identifier == "ag":
+        dataset = AgNews
+    elif identifier == "amazon":
+        dataset = AmazonReviewPolarity
+    elif identifier == "dbpedia":
+        dataset = DbPedia
+    elif identifier == "sogou":
+        dataset = SogouNews
+    elif identifier == "yahoo":
+        dataset = YahooAnswers
+    elif identifier == "yelp":
+        dataset = YelpReview 
+    elif identifier == "yelp-polarity":
+        dataset = YelpReviewPolarity
+    else:
+        raise ValueError("Unkown dataset identifier: {}".format(identifier))
+        
+    return dataset
+
+def get_path(identifier):
+    r"""Returns the correct root directory to dataset based on Id in `{ag,amazon,dbpedia,sogou,yahoo,yelp,yelp-polarity}`"""
+    if identifier == "ag":
+        path = "../../data/ag_news_csv"
+    elif identifier == "amazon":
+        path = AmazonReviewPolarity
+    elif identifier == "dbpedia":
+        path = "../../data/amazon_review_polarity_csv"
+    elif identifier == "sogou":
+        path = "../../data/sougou_news_csv"
+    elif identifier == "yahoo":
+        path = "../../data/yahoo_answers_csv"
+    elif identifier == "yelp":
+        path = "../../data/yelp_review_full_csv"
+    elif identifier == "yelp-polarity":
+        path = "../../data/yelp_review_polarity_csv"
+    else:
+        raise ValueError("Unkown dataset identifier: {}".format(identifier))
+        
+    return os.path.abspath(os.path.join(os.path.dirname(__file__),path))

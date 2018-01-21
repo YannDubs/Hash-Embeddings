@@ -1,9 +1,11 @@
+from timeit import default_timer
+
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-from evaluate.load.helpers import train_valid_load
+from evaluate.pipeline.helpers import train_valid_load
 
 class EarlyStopping:
     """Callable utility returns `True` when should stop the training early due to no improvement.
@@ -107,8 +109,8 @@ class Trainer:
         
     def _train_valid_split(self,trainDataset,validDataset,validSize,**kwargs):
         if validDataset:
-            return (train_valid_load(trainDataset,validSize=0,**kwargs), 
-                    train_valid_load(validDataset,validSize=0,**kwargs))
+            return (train_valid_load(trainDataset,validSize=0,**kwargs)[0], 
+                    train_valid_load(validDataset,validSize=0,**kwargs)[0])
     
         return train_valid_load(trainDataset,validSize=validSize,seed=self.seed,**kwargs)
     
@@ -139,7 +141,7 @@ class Trainer:
             >>> trainer(train,callbacks=callbacks,validSize=0.1)
             >>> trainer.evaluate(test)
         """
-        
+        start = default_timer()
         train, valid = self._train_valid_split(trainDataset,
                                                validDataset,
                                                validSize,
@@ -164,13 +166,14 @@ class Trainer:
             
             metric = self.eval_metric(valid,self.model)
             if self.verbose > 0 and epoch % (4-self.verbose) == 0:
-                print("Epoch: {}. Loss: {}. Acc: {}.".format(epoch,loss.data[0],metric))
+                print("Time since start: {:.1f}. Epoch: {}. Loss: {}. Acc: {}.".format((default_timer() - start)/60,epoch,loss.data[0],metric))
                     
             for callback in callbacks:
-                if callback(metric):
+                if isinstance(callback,EarlyStopping) and callback(metric):
                     callback.on_train_end()
                     return
+
         
     def evaluate(self,test):
         """Evaluates the model on a itraitable `test` dataset."""
-        print("Test accurate:",self.eval_metric(test,self.model))
+        print("Test accuracy:",self.eval_metric(test,self.model))

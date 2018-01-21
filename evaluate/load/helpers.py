@@ -7,12 +7,6 @@ import hashlib
 from collections import Counter
 from itertools import chain
 
-import numpy as np
-import torch
-from torch.utils.data.sampler import SubsetRandomSampler
-from torch.utils.data import DataLoader
-
-
 def n_grams(tokens, n=1):
     r"""Returns an itirator over the `n`-grams given a `listTokens`.
 
@@ -40,9 +34,8 @@ def range_ngrams(tokens, ngramRange=(1,2)):
     """
     return chain(*(n_grams(tokens, i) for i in range(*ngramRange)))
 
-# Stoped using because already done in sklearn. Note that this is quicker than in sklearn (~2x) but only works for uni grams yet.
 def text_to_word_sequence(txt,
-                          filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
+                          filters=string.punctuation + '\n\t',
                           lower=True, 
                           rmSingleChar=True,
                           split=" ",
@@ -80,12 +73,10 @@ def text_to_word_sequence(txt,
         if el:
             yield el
 
-
-# Stoped using because already done in sklearn. Note that this is quicker than in sklearn (~2x) but only works for uni grams yet.
 def hashing_trick(txt, 
                   n=None,
                   hash_function=None,
-                  filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
+                  filters=string.punctuation + '\n\t', 
                   lower=True,
                   rmSingleChar=True,
                   split=' ',
@@ -134,8 +125,6 @@ def hashing_trick(txt,
     else:
         return (hash_function(token) % n for token in nGrams)
 
-
-# Stoped using because already done in sklearn. Note that this is much than in sklearn (~2x) but only works for uni grams yet.
 class Vocabulary:
     r"""Utility to encode text into token ids. Replaces the `hashing trick` by using a pre defined dictionnary.
 
@@ -218,40 +207,4 @@ class Vocabulary:
 
         return (self.word_index[token] for token in nGrams if token in self.word_index)
 
-def train_valid_load(dataset,validSize=0.1,isShuffle=True,seed=123,**kwargs):
-    r"""Utility to split a training set into a validation and a training one.
 
-    Args:
-        dataset (torch.utils.data.Dataset): Dataset to split.
-        validSize (float,optional): Percentage to keep for the validation set. In [0,1].
-        isShuffle (bool,optional): Whether should shuffle before splitting.
-        seed (int, optional): sets the seed for generating random numbers.
-        kwargs: Additional arguments to the `DataLoaders`.
-
-    Returns:
-        The train and the valid DataLoader, respectively.
-    """
-    assert 0 <= validSize <= 1, "validSize:{}. Should be in [0,1]".format(validSize)
-    np.random.seed(seed)
-    torch.random.manual_seed(seed)
-    
-    if validSize == 0:
-        return DataLoader(dataset,**kwargs), iter(())
-    
-    nTrain = len(dataset)
-    idcs = np.arange(nTrain)
-    splitIdx = int(validSize * nTrain)
-
-    if isShuffle:
-        np.random.shuffle(idcs)
-
-    trainIdcs, validIdcs = idcs[splitIdx:], idcs[:splitIdx]
-
-    trainSampler = SubsetRandomSampler(trainIdcs)
-    validSampler = SubsetRandomSampler(validIdcs)
-
-    trainLoader = DataLoader(dataset,sampler=trainSampler,**kwargs)
-
-    validLoader = DataLoader(dataset,sampler=validSampler,**kwargs)
-
-    return trainLoader, validLoader
