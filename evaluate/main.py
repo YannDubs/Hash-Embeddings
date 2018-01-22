@@ -174,16 +174,16 @@ def main(args):
 
     # EVALUATES
     print()
-    evalTest = trainer.evaluate_loader(test)
-    evalValid = trainer.evaluate_loader(valid)
+    evalTest = trainer.evaluate_loader(test,verbose=args.verbose,cuda_device=0 if args.cuda else -1)
+    evalValid = trainer.evaluate_loader(valid,verbose=args.verbose,cuda_device=0 if args.cuda else -1)
     print("Last Model. Validation - Loss: {}, Accuracy: {}".format(evalValid['val_loss'],evalValid['val_acc_metric']))
     print("Last Model. Test - Loss: {}, Accuracy: {}".format(evalTest['val_loss'],evalTest['val_acc_metric']))
 
     if not args.no_checkpoint:
         checkpoint = torch.load(os.path.join(modelDir,filename))
         model.load_state_dict(checkpoint["state_dict"])
-        evalTest = trainer.evaluate_loader(test)
-        evalValid = trainer.evaluate_loader(valid)
+        evalTest = trainer.evaluate_loader(test,verbose=args.verbose,cuda_device=0 if args.cuda else -1)
+        evalValid = trainer.evaluate_loader(valid,verbose=args.verbose,cuda_device=0 if args.cuda else -1)
         print("Best Model. Validation - Loss: {}, Accuracy: {}".format(evalValid['val_loss'],evalValid['val_acc_metric']))
         print("Best Model. Test - Loss: {}, Accuracy: {}".format(evalTest['val_loss'],evalTest['val_acc_metric']))
 
