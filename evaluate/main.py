@@ -131,6 +131,8 @@ def main(args):
                         isHash=not args.no_hashembed,
                         num_buckets=args.num_buckets,
                         append_weight=args.append_weight)
+    if args.cuda:
+        model.cuda()
 
     if args.verbose > 1:
         model_parameters = filter(lambda p: p.requires_grad, model.parameters())
