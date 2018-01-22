@@ -55,8 +55,8 @@ def split_file(file,out1,out2,percentage=0.75,isShuffle=True,seed=123):
     """Splits a file in 2 given the approximate `percentage` of the large file."""
     random.seed(seed)
     with open(file, 'r',encoding="utf-8") as fin, \
-         open(out1, 'w') as foutBig, \
-         open(out2, 'w') as foutSmall:
+         open(out1, 'w',encoding="utf-8") as foutBig, \
+         open(out2, 'w',encoding="utf-8") as foutSmall:
     
         nLines = sum(1 for line in fin)
         fin.seek(0)

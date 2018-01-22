@@ -166,10 +166,12 @@ class AmazonReviewPolarity(CrepeDataset):
         """
     def __init__(self,
                  id="amazon",
+                 classes={'Positive': 2, 'Negative': 1},
                  **kwargs):
         self.id = id
         self.rootPath = get_path(self.id)
         super(AmazonReviewPolarity,self).__init__(self.rootPath,**kwargs)
+        self.classes = classes
 
 class DbPedia(CrepeDataset):
     r"""`DBPedia Ontology Classification Dataset` dataset.
@@ -308,11 +310,13 @@ class YelpReview(CrepeDataset):
                                       rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
+                classes = {'1 star': 1, '2 stars': 2, '3 stars': 3, '4 stars': 4, '5 stars': 5},
                  id="yelp",
                  **kwargs):
         self.id = id
         self.rootPath = get_path(self.id)
         super(YelpReview,self).__init__(self.rootPath,**kwargs)
+        self.classes = classes
 
 class YelpReviewPolarity(CrepeDataset):
     r"""`Yelp Review Full Star Dataset` dataset.
@@ -339,11 +343,13 @@ class YelpReviewPolarity(CrepeDataset):
                                       rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
+                 classes={'Positive': 2, 'Negative': 1},
                  id="yelp-polarity",
                  **kwargs):
         self.id = id
         self.rootPath = get_path(self.id)
-        super(YelpReview,self).__init__(self.rootPath,**kwargs)
+        super(YelpReviewPolarity,self).__init__(self.rootPath,**kwargs)
+        self.classes = classes
 
 def get_dataset(identifier):
     r"""Returns the correct CrepeDataset based on Id in `{ag,amazon,dbpedia,sogou,yahoo,yelp,yelp-polarity}`"""
@@ -371,11 +377,11 @@ def get_path(identifier):
     if identifier == "ag":
         path = "../../data/ag_news_csv"
     elif identifier == "amazon":
-        path = AmazonReviewPolarity
-    elif identifier == "dbpedia":
         path = "../../data/amazon_review_polarity_csv"
+    elif identifier == "dbpedia":
+        path = "../../data/dbpedia_csv"
     elif identifier == "sogou":
-        path = "../../data/sougou_news_csv"
+        path = "../../data/sogou_news_csv"
     elif identifier == "yahoo":
         path = "../../data/yahoo_answers_csv"
     elif identifier == "yelp":

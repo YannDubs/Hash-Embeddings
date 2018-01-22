@@ -148,7 +148,7 @@ class Trainer:
                                                batch_size=batch_size,
                                                **kwargs)
         if self.verbose > 0:
-            print('Num parameters in model: {}'.format(sum([np.prod(p.size) for p in self.model.parameters()])))
+            print('Num parameters in model: {}'.format(sum([np.prod(p.size()) for p in self.model.parameters()])))
             print("Train on {} samples, validate on {} samples".format(len(train),len(valid)))
 
         for epoch in range(epochs):
