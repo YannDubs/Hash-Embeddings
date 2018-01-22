@@ -4,6 +4,8 @@
 # files to remove
 results.txt 
 *.tar
+*.zip
+*@*
 
 # folders to remove
 venv*/

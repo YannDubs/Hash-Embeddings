@@ -133,7 +133,9 @@ def main(args):
                         append_weight=args.append_weight)
 
     if args.verbose > 1:
-        print('Num parameters in model: {}'.format(sum([np.prod(p.shape) for p in model.parameters()])))
+        model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+        nParams = sum([np.prod(p.size()) for p in model_parameters])
+        print('Num parameters in model: {}'.format(nParams))
         print("Train on {} samples, validate on {} samples".format(len(train),len(valid)))
 
     # COMPILES

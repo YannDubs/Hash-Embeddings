@@ -76,9 +76,9 @@ class ModelNoDict(nn.Module):
         # temporary
         if not self.isHash:
             if self.paddingIdx == 0:
-                x = (x % self.embedding.weight.shape[0]-1) +1
+                x = (x % self.embedding.weight.size(0)-1) +1
             else:
-                x = (x % self.embedding.weight.shape[0])
+                x = (x % self.embedding.weight.size(0))
         x = self.embedding(x)
         x = self.text_embedding(x) 
         x = self.fc1(x)
