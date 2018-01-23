@@ -147,14 +147,15 @@ def main(args):
     optimizer = torch.optim.Adam(model.parameters())
 
     callbacks = []
+    callbackMetric = "val_loss" if args.val_loss_callback else "val_acc_metric"
     if args.patience is not None:
-        callbacks.append(EarlyStopping(patience=args.patience))
+        callbacks.append(EarlyStopping(patience=args.patience,monitor=callbackMetric))
     if args.plateau_reduce_lr is not None:
-        callbacks.append(ReduceLROnPlateau(factor=args.plateau_reduce_lr[1], patience=args.plateau_reduce_lr[0]))
+        callbacks.append(ReduceLROnPlateau(factor=args.plateau_reduce_lr[1], patience=args.plateau_reduce_lr[0], monitor=callbackMetric))
     if not args.no_checkpoint:
         modelDir = os.path.join(parentddir,'models')
         filename = "{}.pth.tar".format(args.dataset)
-        callbacks.append(ModelCheckpoint(modelDir, filename=filename, save_best_only=True, max_save=1))
+        callbacks.append(ModelCheckpoint(modelDir, filename=filename, save_best_only=True, max_save=1, monitor=callbackMetric))
              
     metrics = [CategoricalAccuracy()]
 
