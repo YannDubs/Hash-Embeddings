@@ -155,7 +155,7 @@ Nota Bene: In the paper *n* for hash embeddings is called *K* but to differentia
 
 As we say, a picture is worth a million words. Let's save both of us some time :) :
 
-![Alt text](images/Embeddings Explanation.png)
+![Alt text](images/embeddings_explanation.png)
 
 ### In long 
 
