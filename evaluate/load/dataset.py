@@ -140,6 +140,39 @@ class AgNews(CrepeDataset):
         super(AgNews,self).__init__(self.rootPath,**kwargs)
         self.classes = classes
 
+class AmazonReview(CrepeDataset):
+    r"""`Amazon Review Full Dataset` dataset.
+
+        The Amazon reviews polarity dataset is constructed by taking review score 1 and 2 as negative, and 4 and 5 as positive.
+         Samples of score 3 is ignored. In the dataset, class 1 is the negative and class 2 is the positive. 
+         Each class has 1,800,000 training samples and 200,000 testing samples.
+        
+        Args:
+            id (string): Id that will be used to refer to this datset.
+            file (string,optional): Filename to append to the path. If none then will use ``train.csv`` or ``test.csv``.
+            train (bool,optional): If True, creates dataset from ``train.csv`` else ``test.csv``. 
+                If false has to give the train `CrepeDataset`.
+            isHashingTrick (bool,optional): Whether to use the `hashing trick` rather than a dictionnary.
+            nFeaturesRange (tuple,optional): (minFeatures,maxFeatures) If given, each phrase will have a 
+                random number of features K extracted. WHere k in range [minFeatures,maxFeatures[. 
+                This can be seen as dropout. Only when training.
+            trainVocab (Vocabulary,optional): Vocabulary trained on the train set. Mandatory if not `isHashingTrick` and not `train`.
+            seed (int, optional): sets the seed for generating random numbers.
+            **kwargs: Additional arguments to the vectorizer : `hashing_trick` or `Vocabulary`. 
+                Default `hashing_trick`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                         rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+                Default `Vocabulary`: n=None, hash_function=None, filters=string.punctuation, lower=True,
+                                      rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
+        """
+    def __init__(self,
+                 id="amazon",
+                 classes={'Positive': 2, 'Negative': 1},
+                 **kwargs):
+        self.id = id
+        self.rootPath = get_path(self.id)
+        super(AmazonReviewPolarity,self).__init__(self.rootPath,**kwargs)
+        self.classes = classes
+
 class AmazonReviewPolarity(CrepeDataset):
     r"""`Amazon Review Polarity Dataset` dataset.
 
@@ -165,7 +198,7 @@ class AmazonReviewPolarity(CrepeDataset):
                                       rmSingleChar=True, split=' ', maxLength=None, mask_zero=True, ngramRange=(1,2).
         """
     def __init__(self,
-                 id="amazon",
+                 id="amazon-polarity",
                  classes={'Positive': 2, 'Negative': 1},
                  **kwargs):
         self.id = id
@@ -355,8 +388,10 @@ def get_dataset(identifier):
     r"""Returns the correct CrepeDataset based on Id in `{ag,amazon,dbpedia,sogou,yahoo,yelp,yelp-polarity}`"""
     if identifier == "ag":
         dataset = AgNews
-    elif identifier == "amazon":
+    elif identifier == "amazon-polarity":
         dataset = AmazonReviewPolarity
+    elif identifier == "amazon":
+        dataset = AmazonReview
     elif identifier == "dbpedia":
         dataset = DbPedia
     elif identifier == "sogou":
@@ -376,8 +411,10 @@ def get_path(identifier):
     r"""Returns the correct root directory to dataset based on Id in `{ag,amazon,dbpedia,sogou,yahoo,yelp,yelp-polarity}`"""
     if identifier == "ag":
         path = "../../data/ag_news_csv"
-    elif identifier == "amazon":
+    elif identifier == "amazon-polarity":
         path = "../../data/amazon_review_polarity_csv"
+    elif identifier == "amazon":
+        path = "../../data/amazon_review_full_csv"
     elif identifier == "dbpedia":
         path = "../../data/dbpedia_csv"
     elif identifier == "sogou":

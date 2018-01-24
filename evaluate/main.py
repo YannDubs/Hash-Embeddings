@@ -43,7 +43,7 @@ def parse_arguments():
     
     # Dataset options
     data = parser.add_argument_group('Dataset options')
-    datasets = ['ag','amazon','dbpedia','sogou','yahoo','yelp','yelp-polarity']
+    datasets = ['ag','amazon','amazon-polarity','dbpedia','sogou','yahoo','yelp','yelp-polarity']
     data.add_argument('-d','--dataset', help='path to training data csv.', default='ag', choices=datasets)
 
     # Learning options
