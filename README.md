@@ -157,7 +157,7 @@ As we say, a picture is worth a million words. Let's save both of us some time :
 
 ![Alt text](images/embeddings_explanation.png)
 
-### In long 
+### In Long
 
 
 
@@ -212,17 +212,38 @@ In order to compare to the results in the paper I ran the same 3 experiments:
 
 ### My Results
 
-|                        | **No Dict.** &<br/>Hash Emb. | **No Dict.** &<br/>Std Emb. | **Dict.** &<br/>Hash Emb.| **Dict.** &<br/>Std Emb. | **Dict.** &<br/>Ensemble Hash Emb. |
-| :--------------------- |:---------:|:-------: |:--------:| :-------:|:------------------:|
-| **# of Parameters**    | 40M       | 200M     |:--------:| :-------:|:------------------:|
-|                        |           |          |          |          |                    |
-| AG’s news              | 92.1      | 91.9     |91.5      | 91.7     | 92.0               |
-| Amazon Review Full     | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
-| DBPedia                | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |
-| Yahoo! Answers         | 72.3      | 72.3     |71.3      | 65.8     | 72.9               |
-| Yelp Review Full       | 63.8      | 62.6     |62.6      | 61.4     | 62.9               |
-| Amazon Review Polarity | 94.4      | 94.2     |94.7      | 93.6     | 94.7               |
-| Yelp Review Polarity   | 95.9      | 95.5     |95.8      | 95.0     | 95.7               |
+#### Replication of Paper
+
+Please note that currently I only ran the experimenths without dictionnary (although I have tested the code with a dictionnary on a subsample of the data, and all the code is in the package). I decided to do so because:
+
+* Using hashing rather than dictionnary is probably the most useful in practice (better results and enables online learning).
+* The results without dictionnary are the ones where hash embeddings seem to do a lot better than.
+* I didn't have the computational power to run cross validation on neural networks for all datsets (using cv on real problems also seems less likely).
+* I wanted to show that the hash embeddings were working, and then spend some time on improving them.
+
+
+|                        | **No Dict.** &<br/>Hash Emb. | **No Dict.** &<br/>Std Emb. |
+| :--------------------- |:---------:|:-------: |
+| **# of Parameters**    | 40M       | 200M     |
+|                        |           |          | 
+| AG’s news              | **92.1**  | 91.9     |
+| Amazon Review Full     |       |      |
+| DBPedia                | 98.7      |      |
+| Yahoo! Answers         |       |      |
+| Yelp Review Full       |       |      |
+| Amazon Review Polarity |       |      |
+| Yelp Review Polarity   |       |      |
+
+Nota Bene: although the difference between hashembeddings and standard embeddings seems consistent with the papers result, it seems that both of them are slighlty lower than the papers results possible reasons are that:
+
+* I only used a single seed, no cherry picking.
+* I didn't do any hyperparameters optimization due to lack of computational power and time.
+* I used either Pytorch defaults initialization / defaults or the ones from Keras. I often used Keras defaults as the authors used this frameowrk and I was hoping they kept the default parameters for better replicability.
+
+#### Personal Improvements
+The main additional feature I have added which should improve accuracy, is the fact that I am (sort of) using only 2 hash functions rather than 3, which should decrease the number of collisions (see the improvement discussion). I have also implemented the old version in order to see the improvements. Note that because the improvements might be less important than the variabilty due to the seed, I ran the experiment 10 times in order to be able to make a more robust conclusion. Finally I divided both *b* and *n* by 5 as I was looking at *AG news* which has a small dataset (the improvement should really be seen in big datasets as it should decrease the number of collision).
+
+
 
 with append weight:
 9.19
