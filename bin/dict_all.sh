@@ -3,8 +3,8 @@
 cd -P -- "$(dirname -- "$0")"/../
 
 declare -a datasets=('ag' 'amazon' 'amazon-polarity' 'dbpedia' 'yahoo' 'yelp' 'yelp-polarity')
-declare -a nBuckets=(5 100) #(500 10000 50000 100000 150000)
-declare -a nEmbeddings=(50 1000) #(10000 25000 50000 300000 500000 1000000)
+declare -a nBuckets=(500 10000 50000 100000 150000)
+declare -a nEmbeddings=(10000 25000 50000 300000 500000 1000000)
 
 for dataset in "${datasets[@]}"
 do
