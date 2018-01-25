@@ -26,7 +26,7 @@ def default_config():
     return {'no_shuffle': False,
             'no_checkpoint': False,
             'val_loss_callback': False,
-            'epochs': 2,
+            'epochs': 300,
             'batch_size': 64,
             'validation_size': 0.05,
             'seed': 1234,
