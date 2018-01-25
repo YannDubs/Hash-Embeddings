@@ -23,28 +23,28 @@ class HashFamily():
             raise ValueError("p (moduler) should be >> m (buckets)")
             
         self.bins = bins 
-        self.moduler = moduler if moduler else self._next_prime(np.random.randint(self.bins+1,2**32))
+        self.moduler = moduler if moduler else self._next_prime(np.random.randint(self.bins+1, 2**32))
         self.mask_zero = mask_zero
         
         # do not allow same a and b, as it could mean shifted hashes
         self.sampled_a = set()
         self.sampled_b = set()
     
-    def _is_prime(self,x):
+    def _is_prime(self, x):
         """Naive is prime test."""
         for i in range(2,int(np.sqrt(x))):
             if x % i == 0:
                 return False
         return True
         
-    def _next_prime(self,n):  
+    def _next_prime(self, n):  
         """Naively gets the next prime larger than n."""
         while not self._is_prime(n):
             n += 1
 
         return n
     
-    def draw_hash(self,a=None,b=None):
+    def draw_hash(self, a=None, b=None):
         """Draws a single hash function from the family."""
         if a is None:
             while a is None or a in self.sampled_a:
@@ -114,6 +114,8 @@ class HashEmbedding(nn.Module):
             of the different hashes.  
         mask_zero (bool, optional): whether the 0 input is a special "padding" value to mask out.
         seed (int, optional): sets the seed for generating random numbers.
+        oldAlgorithm (bool, optional): whether to use the algorithm in the paper rather than the improved version. 
+            I do not recommend to set to true besides for comparaison.
 
     Attributes:
         shared_embeddings (nn.Embedding): the shared pool of embeddings of shape (num_buckets, embedding_dim). 
@@ -164,7 +166,7 @@ class HashEmbedding(nn.Module):
         [torch.FloatTensor of size 1x4x5]
     """
     def __init__(self, num_embeddings, embedding_dim, num_buckets=None, num_hashes=2, train_sharedEmbed=True,
-                 train_weight=True, append_weight=True, aggregation_mode='sum', mask_zero=False,seed=None):
+                 train_weight=True, append_weight=True, aggregation_mode='sum', mask_zero=False, seed=None, oldAlgorithm=False):
         super(HashEmbedding, self).__init__()
         
         self.num_embeddings = num_embeddings
@@ -177,14 +179,16 @@ class HashEmbedding(nn.Module):
         self.append_weight = append_weight
         self.padding_idx = 0 if mask_zero else None
         self.seed = seed
+        # THERE IS NO ADVANTAGE OF SETTING THE FOLLOWING TO TRUE, I JUST HAVE TO COMPARE WITH THE ALGORITHM IN THE PAPER
+        self.oldAlgorithm = oldAlgorithm
         
         self.importance_weights = nn.Embedding(self.num_embeddings,
-                                              self.num_hashes)
+                                               self.num_hashes)
         self.shared_embeddings = nn.Embedding(self.num_buckets + 1,
-                                            self.embedding_dim,
-                                            padding_idx=self.padding_idx)
+                                              self.embedding_dim,
+                                              padding_idx = self.padding_idx)
 
-        hashFamily = HashFamily(self.num_buckets,mask_zero=mask_zero)
+        hashFamily = HashFamily(self.num_buckets, mask_zero=mask_zero)
         self.hashes = hashFamily.draw_hashes(self.num_hashes)
         
         if aggregation_mode == 'sum':
@@ -206,14 +210,14 @@ class HashEmbedding(nn.Module):
         self.reset_parameters()   
         
     def reset_parameters(self,
-                        init_shared=lambda x: normal(x,std=0.1),
-                        init_importance=lambda x: normal(x,std=0.0005)):
+                        init_shared = lambda x: normal(x,std=0.1),
+                        init_importance = lambda x: normal(x,std=0.0005)):
         """Resets the trainable parameters."""
         def set_constant_row(parameters,iRow=0,value=0):
             """Return `parameters` with row `iRow` as s constant `value`."""
             data = parameters.data
             data[iRow,:] = value
-            return torch.nn.Parameter(data,requires_grad=parameters.requires_grad)
+            return torch.nn.Parameter(data, requires_grad=parameters.requires_grad)
 
         np.random.seed(self.seed)
         if self.seed is not None:
@@ -232,6 +236,8 @@ class HashEmbedding(nn.Module):
 
     def forward(self, input):  
         idx_importance_weights = input % self.num_embeddings
+        # THERE IS NO ADVANTAGE OF USING THE FOLLWOING LINE, I JUST HAVE TO COMPARE WITH THE ALGORITHM IN THE PAPER
+        input = idx_importance_weights if self.oldAlgorithm else input
         idx_shared_embeddings = torch.stack([h(input).masked_fill_(input==0,0) for h in self.hashes], dim=-1)
         
         shared_embedding = torch.stack([self.shared_embeddings(idx_shared_embeddings[:,:,iHash]) 
@@ -241,5 +247,5 @@ class HashEmbedding(nn.Module):
         word_embedding = self.aggregate(importance_weight*shared_embedding)
         if self.append_weight:
             # concateates the vector with the weights
-            word_embedding = torch.cat([word_embedding,importance_weight.squeeze(-2)],dim=-1) 
+            word_embedding = torch.cat([word_embedding,importance_weight.squeeze(-2)], dim=-1) 
         return word_embedding

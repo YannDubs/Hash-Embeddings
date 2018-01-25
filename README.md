@@ -198,7 +198,7 @@ In order to compare to the results in the paper I ran the same 3 experiments:
     * Hash Embeddings : 
         * Hyper parameters: n = 10^7*, *k = 2*, *b = 10^6*, *d = 20*, ngram range : *[1,3[*. 
         * Number of trainable parameters : *40 * 10^6*.
-2. **With a dictionnary**: embedding followed by 3 fully connected layers with *1000* hidden units and ReLu activation ends in softmax layer. With bath normalization.
+2. **With a dictionnary**: embedding followed by 3 fully connected layers with *1000* hidden units and ReLu activation. Then ends in softmax layer. With batch normalization.
     * Standard Embeddings : 
         * Hyper parameters: *n = cross-validate([10K, 25K, 50K, 300K, 500K, 1M])*, *d = 200*, ngram range : *[1,10[*. 
         * Number of trainable parameters : ...
@@ -217,12 +217,12 @@ In order to compare to the results in the paper I ran the same 3 experiments:
 | **# of Parameters**    | 40M       | 200M     |:--------:| :-------:|:------------------:|
 |                        |           |          |          |          |                    |
 | AG’s news              | 92.1      | 91.9     |91.5      | 91.7     | 92.0               |
-| DBPedia                | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
-| Yelp Review Polarity   | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |
-| Yelp Review Full       | 72.3      | 72.3     |71.3      | 65.8     | 72.9               |
-| Yahoo! Answers         | 63.8      | 62.6     |62.6      | 61.4     | 62.9               |
-| Amazon Review Full     | 94.4      | 94.2     |94.7      | 93.6     | 94.7               |
-| Amazon Review Polarity | 95.9      | 95.5     |95.8      | 95.0     | 95.7               |
+| Amazon Review Full     | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
+| DBPedia                | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |
+| Yahoo! Answers         | 72.3      | 72.3     |71.3      | 65.8     | 72.9               |
+| Yelp Review Full       | 63.8      | 62.6     |62.6      | 61.4     | 62.9               |
+| Amazon Review Polarity | 94.4      | 94.2     |94.7      | 93.6     | 94.7               |
+| Yelp Review Polarity   | 95.9      | 95.5     |95.8      | 95.0     | 95.7               |
 
 with append weight:
 9.19
@@ -236,11 +236,11 @@ with append weight:
 | **# of Parameters**    | 40M       | 200M     |:--------:| :-------:|:------------------:|
 |                        |           |          |          |          |                    |
 | AG’s news              | 92.4      | 92.0     |91.5      | 91.7     | 92.0               |
-| DBPedia                | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
-| Yelp Review Polarity   | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |
-| Yelp Review Full       | 72.3      | 72.3     |71.3      | 65.8     | 72.9               |
-| Yahoo! Answers         | 63.8      | 62.6     |62.6      | 61.4     | 62.9               |
-| Amazon Review Full     | 94.4      | 94.2     |94.7      | 93.6     | 94.7               |
-| Amazon Review Polarity | 95.9      | 95.5     |95.8      | 95.0     | 95.7               |
+| Amazon Review Full     | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
+| DBPedia                | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |
+| Yahoo! Answers         | 72.3      | 72.3     |71.3      | 65.8     | 72.9               |
+| Yelp Review Full       | 63.8      | 62.6     |62.6      | 61.4     | 62.9               |
+| Amazon Review Polarity | 94.4      | 94.2     |94.7      | 93.6     | 94.7               |
+| Yelp Review Polarity   | 95.9      | 95.5     |95.8      | 95.0     | 95.7               |
 
 
