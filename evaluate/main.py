@@ -67,13 +67,13 @@ def parse_arguments():
     # Featurizing options
     feature = parser.add_argument_group('Featurizing options')
     feature.add_argument('--dictionnary', action='store_true', default=False, help='Uses a dictionnary.')
-    feature.add_argument('-g','--ngrams-range', metavar=('MIN_NGRAM','MAX_NGRAM'), nargs='*', default=[1,9], help='Range of ngrams to generate. ngrams in [minNgram,maxNgram[.')
+    feature.add_argument('-g','--ngrams-range', metavar=('MIN_NGRAM','MAX_NGRAM'), nargs='*', default=[1,3], help='Range of ngrams to generate. ngrams in [minNgram,maxNgram[.')
     feature.add_argument('-f','--num-features-range', metavar=('MIN_FATURES','MAX_FATURES'), nargs='*', default=[4,100], help='If specified, during training each phrase will have a random number of features in range [minFeatures,maxFeatures[. None if take all.')
 
     # Embedding options
     embedding = parser.add_argument_group('Embedding options')
     embedding.add_argument('--no-hashembed', action='store_true', default=False, help='Uses the default embedding.')
-    embedding.add_argument('--append-weight', action='store_true', default=False, help='Whether to append the importance parameters.')
+    embedding.add_argument('--append-weight', action='store_true', default=True, help='Whether to append the importance parameters.')
     embedding.add_argument('-D','--dim', type=int, default=20, help='Dimension of word vectors. Higher improves downstream task for fixed vocabulary size.')
     embedding.add_argument('-B','--num-buckets', type=int, default=10**6, help='Number of buckets in the shared embedding table. Higher improves approximation quality.')
     embedding.add_argument('-N','--num-embeding', type=int, default=10**7, help='Number of rows in the importance matrix. Approximate the number of rows in a usual embedding. Higher will increase possible vocabulary size.')

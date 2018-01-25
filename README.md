@@ -212,8 +212,10 @@ In order to compare to the results in the paper I ran the same 3 experiments:
 
 ### My Results
 
-| Model                  | **No Dict.** &<br/>Hash Emb. | **No Dict.** &<br/>Std Emb. | **Dict.** &<br/>Hash Emb.| **Dict.** &<br/>Std Emb. | **Dict.** &<br/>Ensemble Hash Emb. |
+|                        | **No Dict.** &<br/>Hash Emb. | **No Dict.** &<br/>Std Emb. | **Dict.** &<br/>Hash Emb.| **Dict.** &<br/>Std Emb. | **Dict.** &<br/>Ensemble Hash Emb. |
 | :--------------------- |:---------:|:-------: |:--------:| :-------:|:------------------:|
+| **# of Parameters**    | 40M       | 200M     |:--------:| :-------:|:------------------:|
+|                        |           |          |          |          |                    |
 | AG’s news              | 92.1      | 91.9     |91.5      | 91.7     | 92.0               |
 | DBPedia                | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
 | Yelp Review Polarity   | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |
@@ -222,12 +224,17 @@ In order to compare to the results in the paper I ran the same 3 experiments:
 | Amazon Review Full     | 94.4      | 94.2     |94.7      | 93.6     | 94.7               |
 | Amazon Review Polarity | 95.9      | 95.5     |95.8      | 95.0     | 95.7               |
 
+with append weight:
+9.19
+
 ### Paper's Results
 
 *from Table 2 in the paper:*
 
-| Model                  | **No Dict.** &<br/>Hash Emb. | **No Dict.** &<br/>Std Emb. | **Dict.** &<br/>Hash Emb.| **Dict.** &<br/>Std Emb. | **Dict.** &<br/>Ensemble Hash Emb. |
+|                        | **No Dict.** &<br/>Hash Emb. | **No Dict.** &<br/>Std Emb. | **Dict.** &<br/>Hash Emb.| **Dict.** &<br/>Std Emb. | **Dict.** &<br/>Ensemble Hash Emb. |
 | :--------------------- |:---------:|:-------: |:--------:| :-------:|:------------------:|
+| **# of Parameters**    | 40M       | 200M     |:--------:| :-------:|:------------------:|
+|                        |           |          |          |          |                    |
 | AG’s news              | 92.4      | 92.0     |91.5      | 91.7     | 92.0               |
 | DBPedia                | 60.0      | 58.3     |59.4      | 58.5     | 60.5               |
 | Yelp Review Polarity   | 98.5      | 98.6     |98.7      | 98.6     | 98.8               |

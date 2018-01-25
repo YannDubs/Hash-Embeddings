@@ -143,9 +143,10 @@ class AgNews(CrepeDataset):
 class AmazonReview(CrepeDataset):
     r"""`Amazon Review Full Dataset` dataset.
 
-        The Amazon reviews polarity dataset is constructed by taking review score 1 and 2 as negative, and 4 and 5 as positive.
-         Samples of score 3 is ignored. In the dataset, class 1 is the negative and class 2 is the positive. 
-         Each class has 1,800,000 training samples and 200,000 testing samples.
+        The Amazon reviews dataset consists of reviews from amazon. The data span a period of 18 years, including ~35 million reviews
+         up to March 2013. Reviews include product and user information, ratings, and a plaintext review. For more information, please
+        refer to the following paper: J. McAuley and J. Leskovec. Hidden factors and hidden topics: understanding rating dimensions with
+         review text. RecSys, 2013.
         
         Args:
             id (string): Id that will be used to refer to this datset.
@@ -166,11 +167,11 @@ class AmazonReview(CrepeDataset):
         """
     def __init__(self,
                  id="amazon",
-                 classes={'Positive': 2, 'Negative': 1},
+                 classes = {'1 star': 1, '2 stars': 2, '3 stars': 3, '4 stars': 4, '5 stars': 5},
                  **kwargs):
         self.id = id
         self.rootPath = get_path(self.id)
-        super(AmazonReviewPolarity,self).__init__(self.rootPath,**kwargs)
+        super(AmazonReview,self).__init__(self.rootPath,**kwargs)
         self.classes = classes
 
 class AmazonReviewPolarity(CrepeDataset):
