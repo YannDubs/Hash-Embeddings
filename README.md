@@ -228,8 +228,8 @@ Please note that currently I only ran the experimenths without dictionnary (alth
 |                        |           |          | 
 | AG’s news              | **92.1**  | 91.9     |
 | Amazon Review Full     |       |      |
-| DBPedia                | 98.7      |      |
-| Yahoo! Answers         |       |      |
+| DBPedia                | 98.7  |      |
+| Yahoo! Answers         | 72.9  |      |
 | Yelp Review Full       |       |      |
 | Amazon Review Polarity |       |      |
 | Yelp Review Polarity   |       |      |
