@@ -1,3 +1,5 @@
+from __future__ import unicode_literals,division
+
 import numpy as np
 
 import torch
@@ -110,8 +112,9 @@ class HashEmbedding(nn.Module):
         train_sharedEmbed (bool,optional): whether to train the shared pool of embeddings E.
         train_weight (bool,optional): whether to train the importance parameters / weight P.
         append_weight (bool,optional): whether to append the importance parameters / weight pw.
-        aggregation_mode ({"sum","mean","concatenate"},optional): how to aggregate the component vectors
-            of the different hashes.  
+        aggregation_mode ({"sum","median","concatenate"},optional): how to aggregate the (weighted) component 
+            vectors of the different hashes. Sum should be the same as mean (because learnable parameters,
+            can learn to divide by n)  
         mask_zero (bool, optional): whether the 0 input is a special "padding" value to mask out.
         seed (int, optional): sets the seed for generating random numbers.
         oldAlgorithm (bool, optional): whether to use the algorithm in the paper rather than the improved version. 
@@ -196,8 +199,9 @@ class HashEmbedding(nn.Module):
         elif aggregation_mode == 'concatenate':
             # little bit quicker than permute/contiguous/view
             self.aggregate = lambda x: torch.cat([x[:,:,:,i] for i in range(self.num_hashes)], dim=-1) 
-        elif aggregation_mode == 'mean':
-            self.aggregate = lambda x: torch.mean(x, dim=-1)
+        elif aggregation_mode == 'median':
+            print('median')
+            self.aggregate = lambda x: torch.median(x, dim=-1)[0]
         else:
             raise ValueError('unknown aggregation function {}'.format(aggregation_mode))
         

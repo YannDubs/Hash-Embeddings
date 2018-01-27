@@ -38,6 +38,7 @@ def default_config():
             'num_features_range': [4,100],
             'no_append_weight': False,
             'old_hashembed': False,
+            'agg_mode': 'sum',
 
             'dictionnary': False,
             'no_hashembed': False,
@@ -72,6 +73,7 @@ def default_experiment(args):
     args.no_append_weight = defaultsConfig['no_append_weight']
     args.old_hashembed = defaultsConfig['old_hashembed']
     args.num_hash = defaultsConfig['num_hash']
+    args.agg_mode = defaultsConfig['agg_mode']
 
     if args.experiment == 'hash-embed-nodict':
         args.dictionnary = False
@@ -184,6 +186,8 @@ def parse_arguments():
     embedding.add_argument('-B','--num-buckets', type=int, default=defaultsConfig['num_buckets'], help='Number of buckets in the shared embedding table. Higher improves approximation quality.')
     embedding.add_argument('-N','--num-embeding', type=int, default=defaultsConfig['num_embeding'], help='Number of rows in the importance matrix. Approximate the number of rows in a usual embedding. Higher will increase possible vocabulary size.')
     embedding.add_argument('-H','--num-hash', type=int, default=defaultsConfig['num_hash'], help='Number of different hashes to use. Higher improves approximation quality.')
+    aggModes = ['sum','concatenate','median']
+    embedding.add_argument('-A','--agg-mode', default=defaultsConfig['agg_mode'], choices=aggModes, help='How to aggregate the different weighted embeddings to make the final one. (weightd) Sum should be the same as making a (weghted) average because learnable weights so can learn to divide by n.')
 
     # Model options
     model = parser.add_argument_group('Model options')
@@ -248,6 +252,7 @@ def main(args):
                     seed = args.seed,
                     num_buckets = args.num_buckets,
                     append_weight = not args.no_append_weight,
+                    aggregation_mode = args.agg_mode,
                     oldAlgorithm = args.old_hashembed)
     if args.cuda:
         model.cuda()
