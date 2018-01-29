@@ -243,7 +243,7 @@ In the paper the authors would first multiply each component vector *C_w[i]* by 
     * Early stooping with patience = 10.
     * 5% of train set used for validation.
 
-In order to compare to the results in the paper I ran the same 3 experiments:
+In order to compare to the results in the paper I ran the same experiments:
 1. **Without a dictionnary**: embedding followed by a softmax.
     * Standard Embeddings : 
         * Hyper parameters: n = 10^7*, *d = 20*, ngram range : *[1,3[*. 
@@ -257,10 +257,6 @@ In order to compare to the results in the paper I ran the same 3 experiments:
         * Number of trainable parameters : ...
     * Hash Embeddings : 
         * Hyper parameters: *n = 10^6*, *k = 2*, *b = cross-validate([500, 10K, 50K, 100K, 150K])*, *d = 200*, ngram range : *[1,10[*. 
-        * Number of trainable parameters : ...
-    * Hash Embedding Ensemble:
-        * Averages 10 models with different seed and between 1 and 3 fully connected layers.
-        * Hyper parameters: *n = 10^6*, *k = 2*, *b = 50 000*, *d = 200*, ngram range : *[1,10[*. 
         * Number of trainable parameters : ...
 
 ### My Results
@@ -280,15 +276,15 @@ Please note that currently I only ran all the experimenths without dictionnary (
 | :---------------------                 |:---------:|:-------: |
 | **# of Parameters**                    | 40M       | 200M     |
 |                                        |           |          | 
-| AG’s news (#train: 120k)               | **92.1**  | 91.9     |
-| Amazon Review Full (#train: 450k)      |       |      |
-| DBPedia (#train: 560k)                 | 98.7  |      | 75 ??  | 91.6
-| Yahoo! Answers (#train: 560k)          | 72.9  | 73.1     |
-| Yelp Review Full (#train: 650k)        |       | 62.1     |
+| AG’s news (#train: 120k)               | **92.1**  | 91.9     | 
+| Amazon Review Full (#train: 450k)      | **59.1**  | 58.8     |
+| DBPedia (#train: 560k)                 | **98.7**  | 98.5     | 
+| Yahoo! Answers (#train: 560k)          | 72.9      | **73.1** |
+| Yelp Review Full (#train: 650k)        | **62.5**  | 62.1     |
 | Amazon Review Polarity (#train: 3000k) |       |      |
-| Yelp Review Polarity (#train: 3600k)   |       |      |
+| Yelp Review Polarity (#train: 3600k)   | **95.8**  | 95.6     |
 
-Nota Bene: although the difference between hashembeddings and standard embeddings seems consistent with the papers result, it seems that both of them are slighlty lower than the papers results possible reasons are that:
+The difference between hashembeddings and standard embeddings seems consistent with the papers result. It seems that the average accuracy is slighly lower for both than in the paper, this might be because:
 
 * I only used a single seed, no cherry picking.
 * I didn't do any hyperparameters optimization.
@@ -312,12 +308,12 @@ From the plot we see that the old and the new hash do not to be significantly di
 | :---------------------                 |:---------:|:-------: |:--------:   | :-------:   |:------------------:|
 | **# of Parameters**                    | 40M       | 200M     | Unspecified | Unspecified |                    |
 |                                        |           |          |             |             |                    |
-| AG’s news (#train: 120k)               | 92.4      | 92.0     |91.5         | 91.7        | 92.0               |
-| Amazon Review Full (#train: 450k)      | 60.0      | 58.3     |59.4         | 58.5        | 60.5               |
-| DBPedia (#train: 560k)                 | 98.5      | 98.6     |98.7         | 98.6        | 98.8               |
-| Yahoo! Answers (#train: 560k)          | 72.3      | 72.3     |71.3         | 65.8        | 72.9               |
-| Yelp Review Full (#train: 650k)        | 63.8      | 62.6     |62.6         | 61.4        | 62.9               |
-| Amazon Review Polarity (#train: 3000k) | 94.4      | 94.2     |94.7         | 93.6        | 94.7               |
-| Yelp Review Polarity (#train: 3600k)   | 95.9      | 95.5     |95.8         | 95.0        | 95.7               |
+| AG’s news (#train: 120k)               | **92.4**  | 92.0     |91.5         | 91.7        | 92.0               |
+| Amazon Review Full (#train: 450k)      | 60.0      | 58.3     |59.4         | 58.5        | **60.5**           |
+| DBPedia (#train: 560k)                 | 98.5      | 98.6     |98.7         | 98.6        | **98.8**           |
+| Yahoo! Answers (#train: 560k)          | 72.3      | 72.3     |71.3         | 65.8        | **72.9**           |
+| Yelp Review Full (#train: 650k)        | **63.8**  | 62.6     |62.6         | 61.4        | 62.9               |
+| Amazon Review Polarity (#train: 3000k) | 94.4      | 94.2     |94.7         | 93.6        | **94.7**           |
+| Yelp Review Polarity (#train: 3600k)   | **95.9**  | 95.5     |95.8         | 95.0        | 95.7               |
 
 
