@@ -183,11 +183,10 @@ As we say, a picture is worth a million words. Let's save both of us some time :
 
 ![hashembedding explanation](images/embeddings_explanation.png)
 
-
 ## Improvements
 I have improved the papers hash embeddings by 3 modification:
 
-### Decreasing number of collision for free 
+### Decreasing number of collisions for free 
  In the paper (when without dictionnary) they first use a hash function *D_1* (which I call *h*) with a range *[1,n]* and then they use the output of *D_1* both for the index of *P* (like me) and as input to *D_2* (which has the same output as my universal hash ***u***). This means that everytime there is a collision in *D_1* the final word embedding would be the same. In my implementation, you need to have a collision both in *h* and ***u*** in order to end up with the same word embedding (i.e same component embeddings and same weights).
 Let's quantify the improvement:
 
@@ -208,7 +207,7 @@ In my implementation 2 words would have the same word embedding (collision) only
 
 This is a huge improvement. For example if we run the the experiment whithout dictionnary and limit the number of toke to *10^9*, i.e *|vocab| = 10^9*, *n=10^7*, *B=10^6*, *k=2* the *p_col_old≈1* while *p_col_new≈0.01*.
 
-*Nota Bene: The authors mentionned this in the paper but they talked about adding a new hash function D_3 to do so, while I do it whithout adding a new hash function. The reason I think they didn't implement as I did is because this required a universal hashing function which I believe they weren't using (see the next improvement) *
+*Nota Bene: The authors mentionned this in the paper but they talked about adding a new hash function D_3 to do so, while I do it whithout adding a new hash function. The reason I think they didn't implement as I did is because this required a universal hashing function which I believe they weren't using (see the next improvement)*
 
 ### (slighlty) Decreasing memory use for free
 From the [authors keras implmentation](https://github.com/dsv77/hashembedding), it seems that they implemented *D_2* as a table filled with *randint % b*. This explains also why they needed to use *D_2* on the output of an other hash *D_1* as they had to look up in the hashing table. This means that they had to store in memory and lookup *k* times per token in a table of hash of dimension *n\*k* (i.e same as *P*).
@@ -246,10 +245,10 @@ In the paper the authors would first multiply each component vector *C_w[i]* by 
 In order to compare to the results in the paper I ran the same experiments:
 1. **Without a dictionnary**: embedding followed by a softmax.
     * Standard Embeddings : 
-        * Hyper parameters: n = 10^7*, *d = 20*, ngram range : *[1,3[*. 
+        * Hyper parameters: *n = 10^7*, *d = 20*, ngram range : *[1,3[*. 
         * Number of trainable parameters : *200 * 10^6*
     * Hash Embeddings : 
-        * Hyper parameters: n = 10^7*, *k = 2*, *b = 10^6*, *d = 20*, ngram range : *[1,3[*. 
+        * Hyper parameters: *n = 10^7*, *k = 2*, *b = 10^6*, *d = 20*, ngram range : *[1,3[*. 
         * Number of trainable parameters : *40 * 10^6*.
 2. **With a dictionnary**: embedding followed by 3 fully connected layers with *1000* hidden units and ReLu activation. Then ends in softmax layer. With batch normalization.
     * Standard Embeddings : 
@@ -281,7 +280,7 @@ Please note that currently I only ran all the experimenths without dictionnary (
 | DBPedia (#train: 560k)                 | **98.7**  | 98.5     | 
 | Yahoo! Answers (#train: 560k)          | 72.9      | **73.1** |
 | Yelp Review Full (#train: 650k)        | **62.5**  | 62.1     |
-| Amazon Review Polarity (#train: 3000k) |       |      |
+| Amazon Review Polarity (#train: 3000k) | **94.4**  |          |
 | Yelp Review Polarity (#train: 3600k)   | **95.8**  | 95.6     |
 
 The difference between hashembeddings and standard embeddings seems consistent with the papers result. It seems that the average accuracy is slighly lower for both than in the paper, this might be because:
@@ -291,13 +290,18 @@ The difference between hashembeddings and standard embeddings seems consistent w
 * I used either Pytorch defaults initialization / defaults or the ones from Keras. I often used Keras defaults as the authors used this frameowrk and I was hoping they kept the default parameters for better replicability.
 
 #### Personal Improvements
-The main additional feature I have added which should improve accuracy, is the fact that with my implementation, 2 different words that have the same ***p_w*** (collision) can have a different *C_w*. In other words I diminish the number of collision (more explanation in the [improvements](#improvements) section). 
 
-I have also implemented the old version in order to see the improvements. Note that because the improvements might be less important than the variabilty due to the seed, I ran the experiment 10 times in order to be able to make a more robust conclusion. Finally I divided both *b* and *n* by 5 as I was looking at *AG news* which has a small dataset (the improvement should really be seen in big datasets as it should decrease the number of collision).
+In order to investigate the effects of my [improvements](#improvements) and of the hyperparameter "append weight" (the optional step of appending the importance weights ***p*** to ***e_w***), I ran a few experiments. Because the effects of each components might be less important than the variabilty due to the seed, I ran the experiment multiple times to make a more robust conclusion. This might also give some idea about the statistical significance of some of the papers and my results. As this [nice paper](https://arxiv.org/pdf/1707.09861.pdf) reminds us: looking at the distribution matters! Unfortunately I don't have the computational power to run large experiments multiple times so I decided to run only for smaller datasets. Because I chose the smaller datasets of the ones we have above, I divided both *b* and *n* by 5 in order to understand if some methods need less parameters.
 
 From the plot we see that the old and the new hash do not to be significantly different (although a bit worst) on the test set, although it seems that the greater number of collision in the standard hash embeddings might have a regularization effect (at least on this small dataset). Indeed the results on the training set seems significantly higher with the improved hash embeddings. This plot also seems to indicate that the "Ag News" dataset should have been used to evaluate a model with less parameters, indeed it seems that the large number of parameters in standard embeddings only makes it overfit.
 
-*Nota Bene: the plot above also gives a good idea of statistical significance of some of the papers and my results. As this [nice paper](https://arxiv.org/pdf/1707.09861.pdf) reminds us: looking at the distribution matters! I don't have the computational power to do such experiment for all datsets but thought that doing so on 2 datasets would already give some kind of idea about the significance of the results. It should be noted that the paper doesn't say that they can achieve better results but rather that in their tests they did at least as well with less parameters.*
+##### Decreasing Number of Collisions for free 
+
+![Effect of Embeddings](images/accuracy_distribution_ag_embeddings.png)
+
+##### Different Aggregation Methods
+
+![Effect of hyper](images/accuracy_distribution_ag_hyperparameter.png)
 
 
 ### Paper's Results
