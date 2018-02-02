@@ -280,7 +280,7 @@ Please note that currently I only ran all the experimenths without dictionnary (
 | DBPedia (#train: 560k)                 | **98.7**  | 98.5     | 
 | Yahoo! Answers (#train: 560k)          | 72.9      | **73.1** |
 | Yelp Review Full (#train: 650k)        | **62.5**  | 62.1     |
-| Amazon Review Polarity (#train: 3000k) | **94.4**  |          |
+| Amazon Review Polarity (#train: 3000k) | **94.3**  | 94.2     |
 | Yelp Review Polarity (#train: 3600k)   | **95.8**  | 95.6     |
 
 The difference between hashembeddings and standard embeddings seems consistent with the papers result. It seems that the average accuracy is slighly lower for both than in the paper, this might be because:
