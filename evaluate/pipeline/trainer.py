@@ -7,51 +7,54 @@ from torch.autograd import Variable
 
 from evaluate.pipeline.helpers import train_valid_load
 
+
 class EarlyStopping:
     """Callable utility returns `True` when should stop the training early due to no improvement.
-    
+
     Args:
         patience (torch.Tensor): Number of epochs with no improvement after which training will be stopped.
-        mode ({"min","max"},optional): Will stop when reaches a (local) `min`/`max`. 
+        mode ({"min","max"},optional): Will stop when reaches a (local) `min`/`max`.
         verbose (int,optional): verbosity level in [0,3].
 
     Example:
         >>> earlyStopping = EarlyStopping(patience=10)
         >>> for epoch in range(50):
-        >>>     ... # train 
+        >>>     ... # train
         >>>     accuracy = ...
         >>>     if earlyStopping(accuracy):
         >>>         earlyStopping.on_train_end()
         >>>         break
     """
-    def __init__(self,patience=5,mode="max",verbose=1):
-        assert mode in {'min','max'}, "unkown mode"
+
+    def __init__(self, patience=5, mode="max", verbose=1):
+        assert mode in {'min', 'max'}, "unkown mode"
         self.wait = 0
         self.best = 0
         self.patience = patience
         self.operator = np.greater if "max" else np.less
         self.epoch = -1
         self.verbose = verbose
-        
-    def __call__(self,metric):
+
+    def __call__(self, metric):
         '''Given the current metric returns `True` if should stop early.'''
-        if self.operator(metric,self.best):
+        if self.operator(metric, self.best):
             self.best = metric
             self.wait = 0
         else:
             self.wait += 1
         self.epoch += 1
         return self.wait >= self.patience
-                 
+
     def on_train_end(self):
         """Function to call just before stopping: i.e prints information."""
         if self.verbose > 0:
-            print("Stoping at epoch:{} with patience:{}. Best:{}.".format(self.epoch,self.patience,self.best))
+            print("Stoping at epoch:{} with patience:{}. Best:{}.".format(self.epoch, self.patience, self.best))
 
-def evaluate_accuracy(dataIter,model):
+
+def evaluate_accuracy(dataIter, model):
     """Given a iterator over a `dataset` and a `model`, returns the accuracy."""
-    total, correct = 0,0
-    for x,y in dataIter:
+    total, correct = 0, 0
+    for x, y in dataIter:
         x = Variable(x)
         y = y.squeeze()
         outputs = model(x)
@@ -60,12 +63,13 @@ def evaluate_accuracy(dataIter,model):
         total += y.size(0)
     return correct / total
 
+
 class Trainer:
     """Pipeline for training.
 
     Args:
         model (torch.nn.Module): Model to train.
-        criterion (torch.nn.modules.loss._Loss,optional): Loss to optimize for. 
+        criterion (torch.nn.modules.loss._Loss,optional): Loss to optimize for.
         optimizer (toch.optim.optimizer.Optimizer,optional): Optimizer for training the model.
         verbose (int,optional): verbosity level in [0,3].
         seed (int, optional): sets the seed for generating random numbers.
@@ -78,6 +82,7 @@ class Trainer:
         >>> trainer(train,callbacks=callbacks,validSize=0.1)
         >>> trainer.evaluate(test)
     """
+
     def __init__(self,
                  model,
                  criterion=nn.CrossEntropyLoss,
@@ -106,14 +111,14 @@ class Trainer:
             self.eval_metric = evaluate_accuracy
         self.criterion = criterion()
         self.optimizer = optimizer(model.parameters())
-        
-    def _train_valid_split(self,trainDataset,validDataset,validSize,**kwargs):
+
+    def _train_valid_split(self, trainDataset, validDataset, validSize, **kwargs):
         if validDataset:
-            return (train_valid_load(trainDataset,validSize=0,**kwargs)[0], 
-                    train_valid_load(validDataset,validSize=0,**kwargs)[0])
-    
-        return train_valid_load(trainDataset,validSize=validSize,seed=self.seed,**kwargs)
-    
+            return (train_valid_load(trainDataset, validSize=0, **kwargs)[0],
+                    train_valid_load(validDataset, validSize=0, **kwargs)[0])
+
+        return train_valid_load(trainDataset, validSize=validSize, seed=self.seed, **kwargs)
+
     def __call__(self,
                  trainDataset,
                  validDataset=None,
@@ -149,31 +154,30 @@ class Trainer:
                                                **kwargs)
         if self.verbose > 0:
             print('Num parameters in model: {}'.format(sum([np.prod(p.size()) for p in self.model.parameters()])))
-            print("Train on {} samples, validate on {} samples".format(len(train),len(valid)))
+            print("Train on {} samples, validate on {} samples".format(len(train), len(valid)))
 
         for epoch in range(epochs):
-            for x,y in train:
+            for x, y in train:
                 if self.isCuda:
                     y = y.cuda()
                 x = Variable(x)
                 y = Variable(y).squeeze()
 
-                self.optimizer.zero_grad() 
+                self.optimizer.zero_grad()
                 outputs = self.model(x)
-                loss = self.criterion(outputs,y)
+                loss = self.criterion(outputs, y)
                 loss.backward()
                 self.optimizer.step()
-            
-            metric = self.eval_metric(valid,self.model)
-            if self.verbose > 0 and epoch % (4-self.verbose) == 0:
-                print("Time since start: {:.1f}. Epoch: {}. Loss: {}. Acc: {}.".format((default_timer() - start)/60,epoch,loss.data[0],metric))
-                    
+
+            metric = self.eval_metric(valid, self.model)
+            if self.verbose > 0 and epoch % (4 - self.verbose) == 0:
+                print("Time since start: {:.1f}. Epoch: {}. Loss: {}. Acc: {}.".format((default_timer() - start) / 60, epoch, loss.data[0], metric))
+
             for callback in callbacks:
-                if isinstance(callback,EarlyStopping) and callback(metric):
+                if isinstance(callback, EarlyStopping) and callback(metric):
                     callback.on_train_end()
                     return
 
-        
-    def evaluate(self,test):
+    def evaluate(self, test):
         """Evaluates the model on a itraitable `test` dataset."""
-        print("Test accuracy:",self.eval_metric(test,self.model))
+        print("Test accuracy:", self.eval_metric(test, self.model))

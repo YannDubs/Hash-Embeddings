@@ -277,13 +277,13 @@ Please note that currently I only ran all the experimenths without dictionnary (
 |                                        |           |          | 
 | AG’s news (#train: 120k)               | **92.1**  | 91.9     | 
 | Amazon Review Full (#train: 450k)      | **59.1**  | 58.8     |
-| DBPedia (#train: 560k)                 | **98.7**  | 98.5     | 
-| Yahoo! Answers (#train: 560k)          | 72.9      | **73.1** |
-| Yelp Review Full (#train: 650k)        | **62.5**  | 62.1     |
+| DBPedia (#train: 450k)                 | **98.7**  | 98.5     | 
+| Yahoo! Answers (#train: 650k)          | 72.9      | **73.1** |
+| Yelp Review Full (#train: 560k)        | **62.5**  | 62.1     |
 | Amazon Review Polarity (#train: 3000k) | **94.3**  | 94.2     |
-| Yelp Review Polarity (#train: 3600k)   | **95.8**  | 95.6     |
+| Yelp Review Polarity (#train: 560k)    | **95.8**  | 95.6     |
 
-The difference between hashembeddings and standard embeddings seems consistent with the papers result. It seems that the average accuracy is slighly lower for both than in the paper, this might be because:
+The difference between hashembeddings and standard embeddings seems consistent with the papers result (Hashembedding is always better besides 1 dataset. In our case Yahoo, in the paper DBPedia). It seems that the average accuracy is slighly lower for both than in the paper, this might be because:
 
 * I only used a single seed, no cherry picking.
 * I didn't do any hyperparameters optimization.
@@ -293,16 +293,25 @@ The difference between hashembeddings and standard embeddings seems consistent w
 
 In order to investigate the effects of my [improvements](#improvements) and of the hyperparameter "append weight" (the optional step of appending the importance weights ***p*** to ***e_w***), I ran a few experiments. Because the effects of each components might be less important than the variabilty due to the seed, I ran the experiment multiple times to make a more robust conclusion. This might also give some idea about the statistical significance of some of the papers and my results. As this [nice paper](https://arxiv.org/pdf/1707.09861.pdf) reminds us: looking at the distribution matters! Unfortunately I don't have the computational power to run large experiments multiple times so I decided to run only for smaller datasets. Because I chose the smaller datasets of the ones we have above, I divided both *b* and *n* by 5 in order to understand if some methods need less parameters.
 
-From the plot we see that the old and the new hash do not to be significantly different (although a bit worst) on the test set, although it seems that the greater number of collision in the standard hash embeddings might have a regularization effect (at least on this small dataset). Indeed the results on the training set seems significantly higher with the improved hash embeddings. This plot also seems to indicate that the "Ag News" dataset should have been used to evaluate a model with less parameters, indeed it seems that the large number of parameters in standard embeddings only makes it overfit.
+*Nota Bene: yhe evaluation on the training set is the evaluation during training phase, i.e I still sample randomlyn-grams from the text (the accuracy would be around 1 if not)*
 
 ##### Decreasing Number of Collisions for free 
 
-![Effect of Embeddings](images/accuracy_distribution_ag_embeddings.png)
+![Effect of Embeddings AG News](images/accuracy_distribution_ag_embeddings.png)
+
+![Effect of Embeddings DBPedia](images/accuracy_distribution_dbpedia_embeddings.png)
+
+From the plots we see that the old and the new hash-embeddings are significantly different on the test set, although it seems that the greater number of collision in the standard hash embeddings might have a regularization effect (at least on this small dataset). Indeed the results on the training set seems significantly higher with the improved hash embeddings. 
+
+The first plot also seems to indicate that the "Ag News" dataset should have been used to evaluate a model with less parameters, indeed it seems that the large number of parameters in standard embeddings only makes it overfit.
+
+The second plot is interesting as it shows that the hash-embeddings do indeed work better when there are the same number of parameters. Interestingly it seems to indicate that hash-embeddings work just as well as using a dictionary with the same amount of parameters. I.e there's no more reason (besides simplicity) to use a dictionary instead of hash embeddings.
 
 ##### Different Aggregation Methods
 
 ![Effect of hyper](images/accuracy_distribution_ag_hyperparameter.png)
 
+From this plot we see that the default hyperparameters seem to be the best (sum and append weights). Although appending weights doesn't seem to give a statistically significant result difference in our case.
 
 ### Paper's Results
 
