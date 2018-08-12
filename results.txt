@@ -1,0 +1,54 @@
+-------------------------------------------------
+Ran on 2018-01-22 06:04
+
+Parameters: {'dataset': 'ag', 'no_shuffle': False, 'no_checkpoint': False, 'epochs': 300, 'batch_size': 64, 'validation_size': 0.05, 'seed': 123, 'patience': 10, 'verbose': 3, 'plateau_reduce_lr': [4, 0.5], 'no_cuda': False, 'num_workers': 0, 'dictionnary': False, 'ngrams_range': [1, 9], 'num_features_range': [4, 100], 'no_hashembed': False, 'append_weight': False, 'dim': 20, 'num_buckets': 1000000, 'num_embeding': 10000000, 'num_hash': 2, 'cuda': False}
+
+Prepares data ...
+Prepares model ...
+Num parameters in model: 40000084
+Train on 1782 samples, validate on 94 samples
+Trains ...
+
+Last Model. Validation - Loss: 1.245236667755402, Accuracy: 90.93333333333334
+Last Model. Test - Loss: 1.8053986992686988, Accuracy: 91.14473684210526
+Best Model. Validation - Loss: 0.5178785300176393, Accuracy: 90.58333333333333
+Best Model. Test - Loss: 0.6492705593196054, Accuracy: 90.17105263157895
+Finished after 397.9 min.
+-------------------------------------------------
+Ran on 2018-01-22 12:45
+
+Parameters: {'dataset': 'ag', 'no_shuffle': False, 'no_checkpoint': False, 'epochs': 300, 'batch_size': 64, 'validation_size': 0.05, 'seed': 123, 'patience': 10, 'verbose': 3, 'plateau_reduce_lr': [4, 0.5], 'no_cuda': False, 'num_workers': 0, 'dictionnary': False, 'ngrams_range': [1, 9], 'num_features_range': [4, 100], 'no_hashembed': True, 'append_weight': False, 'dim': 20, 'num_buckets': 1000000, 'num_embeding': 10000000, 'num_hash': 2, 'cuda': False}
+
+Prepares data ...
+Prepares model ...
+Num parameters in model: 200000084
+Train on 1782 samples, validate on 94 samples
+Trains ...
+
+Last Model. Validation - Loss: 1.4761262154108599, Accuracy: 90.1
+Last Model. Test - Loss: 2.3556175235658894, Accuracy: 90.48684210526316
+Best Model. Validation - Loss: 0.519705530687382, Accuracy: 90.5
+Best Model. Test - Loss: 0.7088688815943897, Accuracy: 90.19736842105263
+Finished after 2463.5 min.
+-------------------------------------------------
+Ran on 2018-01-24 05:48
+
+Parameters: {'dataset': 'amazon', 'no_shuffle': False, 'no_checkpoint': False, 'epochs': 300, 'batch_size': 64, 'validation_size': 0.05, 'seed': 123, 'patience': 10, 'verbose': 3, 'plateau_reduce_lr': [4, 0.5], 'no_cuda': False, 'num_workers': 0, 'dictionnary': False, 'ngrams_range': [1, 9], 'num_features_range': [4, 100], 'no_hashembed': False, 'append_weight': False, 'dim': 20, 'num_buckets': 1000000, 'num_embeding': 10000000, 'num_hash': 2, 'cuda': False}
+
+Prepares data ...
+-------------------------------------------------
+Ran on 2018-01-24 05:48
+
+Parameters: {'dataset': 'amazon', 'no_shuffle': False, 'no_checkpoint': False, 'epochs': 300, 'batch_size': 64, 'validation_size': 0.05, 'seed': 123, 'patience': 10, 'verbose': 3, 'plateau_reduce_lr': [4, 0.5], 'no_cuda': False, 'num_workers': 0, 'dictionnary': False, 'ngrams_range': [1, 9], 'num_features_range': [4, 100], 'no_hashembed': True, 'append_weight': False, 'dim': 20, 'num_buckets': 1000000, 'num_embeding': 10000000, 'num_hash': 2, 'cuda': False}
+
+Prepares data ...
+-------------------------------------------------
+Ran on 2018-01-24 05:48
+
+Parameters: {'dataset': 'dbpedia', 'no_shuffle': False, 'no_checkpoint': False, 'epochs': 300, 'batch_size': 64, 'validation_size': 0.05, 'seed': 123, 'patience': 10, 'verbose': 3, 'plateau_reduce_lr': [4, 0.5], 'no_cuda': False, 'num_workers': 0, 'dictionnary': False, 'ngrams_range': [1, 9], 'num_features_range': [4, 100], 'no_hashembed': False, 'append_weight': False, 'dim': 20, 'num_buckets': 1000000, 'num_embeding': 10000000, 'num_hash': 2, 'cuda': False}
+
+Prepares data ...
+Prepares model ...
+Num parameters in model: 40000294
+Train on 53438 samples, validate on 2813 samples
+Trains ...
