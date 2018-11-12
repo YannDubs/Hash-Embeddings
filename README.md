@@ -1,5 +1,5 @@
 # Hash-Embeddings
-PyTorch implementation of my [improved](#improvements) version of [Hash Embedding for efficient Representation](https://arxiv.org/abs/1709.03933) (NIPS 2017). Submission to the NIPS Implementation Challenge.
+PyTorch implementation of my [improved](#improvements) version of [Hash Embedding for efficient Representation](https://arxiv.org/abs/1709.03933) (NIPS 2017). Submission to the NIPS Implementation Challenge ([Featured Winner](https://medium.com/nurture-ai/yann-dubois-from-biomedical-engineering-to-machine-learning-9a5b87b7659b)).
 
 The use of this directory is two-fold:
 * Implementing an improved hash embedding layer in PyTorch. This can be found in the `./hashembed` folder. It works both for Python 2 and 3.
